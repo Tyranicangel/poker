@@ -1,3 +1,29 @@
-<p>
-  main works!
-</p>
+<div class="full-screen" style="display: flex;flex-flow: column;">
+	<nav class="navbar navbar-dark" style="flex: 0;">
+		<span class="navbar-brand">
+			<img src="assets/logo_original.jpg" width="30" height="30" class="logo_image d-inline-block align-top" alt="">
+		    Pokr
+		</span>
+		<ul class="nav navbar-nav float-xs-right">
+			<li class="nav-item"><a routerLink="login" class="btn btn-outline-success">Login</a></li>
+		</ul>
+	</nav>
+	<div class="container-fluid" style="display: flex;flex-flow: column;justify-content: center;align-items: center;flex: 1">
+		<div class="container" style="text-align: center;max-width: 1000px;">
+			<h1 class="display-4  text-white smallhead">Simple Poker Game to have some fun.</h1>
+			<div class="container col-xs-5" style="background: rgba(0,0,0,0.5);border-radius: 10px;padding: 25px 0px;margin-top: 20px;">
+				<div class="row">
+					<div class="col-xs-12">
+						<span class="text-white">Don't have a Pokr account yet?</span>
+						<a routerLink="register" class="btn btn-info">Register</a>
+					</div>
+				</div>
+				<div class="row text-white">
+					<div class="col-xs-12" style="padding-top:10px;">
+						<span>Already joined Pokr? </span><a routerLink="login" class="text-white" style="text-decoration: underline;">Login</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
