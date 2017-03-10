@@ -16,7 +16,8 @@ The aws-sdk config is location in aws.config.json.
 Please refer to the documentation of angular/cli and nodemon for further details about development environment.
 
 ##Instructions
-Install node and npm
+Install node and npm \n
+
 Install nodemon and @angular/cli globally via npm
 Go to front folder and npm install dependencies
 Go to back folder and npm install dependencies
