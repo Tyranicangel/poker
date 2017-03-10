@@ -1,6 +1,5 @@
 ##Introduction
 This is the term project for SFSU CSC 667/867 course, a poker game based on Socket.io, Node, Express, Angular, Sequelize and Bootstrap.<br/>
-
 Front folder consists of angular(Front end).
 
 Back folder consists of express(Back end).
