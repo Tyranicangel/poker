@@ -14,6 +14,6 @@ Install nodemon and @angular/cli globally via npm<br/>
 Go to front folder and npm install dependencies<br/>
 Go to back folder and npm install dependencies<br/>
 Download bootstrap-4<br/>
-Manually copy bootstrap-flex*.*.css manually into nodemodules/dist/css<br/>
+Manually copy bootstrap-flex*.*.css manually into nodemodules/bootstrap/dist/css<br/>
 Run npm start in front folder<br/>
 Run nodemon start in back folder<br/>
