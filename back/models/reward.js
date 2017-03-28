@@ -1,11 +1,15 @@
 'use strict';
 module.exports = function(sequelize, DataTypes) {
   var Reward = sequelize.define('Reward', {
-    name: DataTypes.STRING
+      value:{
+        type: DataTypes.INTEGER,
+        defaultValue:0,
+        allowNull:false
+      }
   }, {
     classMethods: {
       associate: function(models) {
-        // associations can be defined here
+        Reward.belongsTo(models.User);
       }
     }
   });

@@ -1,11 +1,20 @@
 'use strict';
 module.exports = function(sequelize, DataTypes) {
   var UserPlay = sequelize.define('UserPlay', {
-    name: DataTypes.STRING
+    playType:{
+        type: DataTypes.INTEGER,
+        allowNull:false,
+        defaultValue:1
+      },
+      betAmount:{
+        type: DataTypes.INTEGER,
+        allowNull:false,
+        defaultValue:0
+      }
   }, {
     classMethods: {
       associate: function(models) {
-        // associations can be defined here
+        UserPlay.belongsTo(models.GameUser);
       }
     }
   });

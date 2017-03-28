@@ -1,11 +1,35 @@
 'use strict';
 module.exports = function(sequelize, DataTypes) {
   var Table = sequelize.define('Table', {
-    name: DataTypes.STRING
+    name: {
+        type: DataTypes.STRING,
+        unique:true,
+        allowNull:false
+      },
+      bigBlind:{
+        type: DataTypes.INTEGER,
+        allowNull:false
+      },
+      smallBlind:{
+        type: DataTypes.INTEGER,
+        allowNull:false
+      },
+      status:{
+        type:DataTypes.INTEGER,
+        allowNull:false,
+        defaultValue:0
+      },
+      socket:{
+        type: DataTypes.STRING,
+        unique:true,
+        allowNull:false
+      }
   }, {
     classMethods: {
       associate: function(models) {
-        // associations can be defined here
+        Table.hasMany(models.Chat, {as:'Chat'});
+        Table.hasMany(models.Game, {as:'Game'});
+        Table.hasMany(models.TableUser, {as:'People'});
       }
     }
   });

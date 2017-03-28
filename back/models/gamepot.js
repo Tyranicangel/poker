@@ -1,11 +1,16 @@
 'use strict';
 module.exports = function(sequelize, DataTypes) {
   var GamePot = sequelize.define('GamePot', {
-    name: DataTypes.STRING
+      value:{
+        type: DataTypes.INTEGER,
+        allowNull:false,
+        defaultValue:0
+      }
   }, {
     classMethods: {
       associate: function(models) {
-        // associations can be defined here
+        GamePot.belongsTo(models.Game);
+        GamePot.hasMany(models.PotUser, {as:'Player'});
       }
     }
   });

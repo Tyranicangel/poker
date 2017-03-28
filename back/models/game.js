@@ -1,11 +1,13 @@
 'use strict';
 module.exports = function(sequelize, DataTypes) {
   var Game = sequelize.define('Game', {
-    name: DataTypes.STRING
   }, {
     classMethods: {
       associate: function(models) {
-        // associations can be defined here
+        Game.belongsTo(models.Table);
+        Game.hasMany(models.GameCard, {as:'GameCard'});
+        Game.hasMany(models.GamePot, {as:'Pot'});
+        Game.hasMany(models.GameUser, {as:'Player'});
       }
     }
   });

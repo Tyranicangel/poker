@@ -1,11 +1,18 @@
 'use strict';
 module.exports = function(sequelize, DataTypes) {
   var Session = sequelize.define('Session', {
-    name: DataTypes.STRING
+      jwtCode:{
+        type: DataTypes.STRING,
+        allowNull: false
+      },
+      expiry: {
+        type: DataTypes.DATE,
+        allowNull: false
+      }
   }, {
     classMethods: {
       associate: function(models) {
-        // associations can be defined here
+        Session.belongsTo(models.User);
       }
     }
   });

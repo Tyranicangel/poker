@@ -1,11 +1,16 @@
 'use strict';
 module.exports = function(sequelize, DataTypes) {
   var PotUser = sequelize.define('PotUser', {
-    name: DataTypes.STRING
+    winner: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+      }
   }, {
     classMethods: {
       associate: function(models) {
-        // associations can be defined here
+        PotUser.belongsTo(models.GamePot);
+        PotUser.belongsTo(models.GameUser);
       }
     }
   });

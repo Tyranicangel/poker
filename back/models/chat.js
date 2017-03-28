@@ -1,11 +1,15 @@
 'use strict';
 module.exports = function(sequelize, DataTypes) {
   var Chat = sequelize.define('Chat', {
-    name: DataTypes.STRING
+      message:{
+        type: DataTypes.TEXT,
+        allowNull:false
+      }
   }, {
     classMethods: {
       associate: function(models) {
-        // associations can be defined here
+        Chat.belongsTo(models.TableUser);
+        Chat.belongsTo(models.Table);
       }
     }
   });

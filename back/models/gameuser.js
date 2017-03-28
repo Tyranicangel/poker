@@ -1,11 +1,33 @@
 'use strict';
 module.exports = function(sequelize, DataTypes) {
   var GameUser = sequelize.define('GameUser', {
-    name: DataTypes.STRING
+      status:{
+        type: DataTypes.INTEGER,
+        defaultValue:1
+      },
+      isBigBlind:{
+        type: DataTypes.BOOLEAN,
+        defaultValue:false
+      },
+      isSmallBlind:{
+        type: DataTypes.BOOLEAN,
+        defaultValue:false
+      },
+      isDealer:{
+        type: DataTypes.BOOLEAN,
+        defaultValue:false
+      },
+      isCurrent:{
+        type: DataTypes.BOOLEAN,
+        defaultValue:false
+      }
   }, {
     classMethods: {
       associate: function(models) {
-        // associations can be defined here
+        GameUser.belongsTo(models.Game);
+        GameUser.belongsTo(models.TableUser);
+        GameUser.hasMany(models.UserCard, {as:'Hand'});
+        GameUser.hasMany(models.UserPlay, {as:'Play'});
       }
     }
   });

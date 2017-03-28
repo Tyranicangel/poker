@@ -1,11 +1,32 @@
 'use strict';
 module.exports = function(sequelize, DataTypes) {
   var TableUser = sequelize.define('TableUser', {
-    name: DataTypes.STRING
+      status:{
+        type:DataTypes.INTEGER,
+        allowNull:false,
+        defaultValue:0
+      },
+      buyIn:{
+        type:DataTypes.INTEGER,
+        allowNull:false,
+        defaultValue:0
+      },
+      currentChips:{
+        type:DataTypes.INTEGER,
+        allowNull:false,
+        defaultValue:0
+      },
+      position:{
+        type:DataTypes.INTEGER,
+        allowNull:false,
+        defaultValue:0
+      }
   }, {
     classMethods: {
       associate: function(models) {
-        // associations can be defined here
+        TableUser.belongsTo(models.Table);
+        TableUser.belongsTo(models.User);
+        TableUser.hasMany(models.Chat, {as:'Message'});
       }
     }
   });

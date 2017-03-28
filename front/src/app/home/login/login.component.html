@@ -1,20 +1,37 @@
-<div class="full-screen" style="display: flex;flex-flow: column;">
-	<nav class="navbar navbar-dark" style="flex: 0;">
-		<span class="navbar-brand">
-			<img src="assets/logo_original.jpg" width="30" height="30" class="logo_image d-inline-block align-top" alt="">
-		    Pokr
-		</span>
-		<ul class="nav navbar-nav float-xs-right">
-			<li class="nav-item text-white">Don't have an account? <a routerLink="register" class="btn btn-outline-info">Register</a></li>
-		</ul>
-	</nav>
-	<div class="container-fluid" style="display: flex;flex-flow: column;justify-content: center;align-items: center;flex: 1">
-		<div class="container" style="text-align: center;max-width: 1000px;">
-			<div class="container col-xs-7" style="background: rgba(0,0,0,0.5);border-radius: 10px;padding: 25px 0px;margin-top: 20px;">
-				<form action="">
-					
-				</form>
-			</div>
+<div class="full-screen" style="display: flex;flex-flow: row;">
+	<div class="container left_part">
+		<nav class="navbar navbar-light">
+			<a routerLink="" class="navbar-brand">
+				<img src="assets/logo_original.jpg" width="30" height="30" class="d-inline-block align-top" alt="">
+				Pokr
+			</a>
+		</nav>
+		<div class="container" style="padding-top: 20px;">
+			<div class="row align-center"><span style="font-weight: 300;font-size: 2.5rem;">Register</span></div>
+			<form (ngSubmit)="login()">
+				<div class="form-group">
+					<label for="companyName">Username</label>
+					<input type="text" class="form-control" id="companyName" placeholder="Enter your username..."  [ngModelOptions]="{standalone: true}" [(ngModel)]="user.username" required>
+				</div>
+				<div class="form-group">
+					<label for="companyName">Password</label>
+					<input type="password" class="form-control" id="companyName" placeholder="Enter your password..."  [ngModelOptions]="{standalone: true}" [(ngModel)]="user.password" required>
+				</div>
+				<div class="form-group text-xs-center" style="padding-top: 10px;">
+					<button type="submit" class="btn btn-success">Login</button>
+				</div>
+				<div class="form-group text-xs-center">
+					<span>Forgot your password? <a routerLink="/forgot">Reset</a></span>
+				</div>
+			</form>
 		</div>
+	</div>
+	<div class="container" style="background: #21b2fe">
+		<nav class="navbar navbar-dark" style="color: #ffffff !important;">
+			<span class="navbar-text float-xs-right">
+				Don't have a Pokr account?
+				<a routerLink="/register" style="color: #ffffff !important;" class="btn btn-outline-success">Register</a>
+			</span>
+		</nav>
 	</div>
 </div>
