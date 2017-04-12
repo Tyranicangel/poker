@@ -1,7 +1,7 @@
 {
   "development": {
     "username": "rexlam",
-    "password": "noobtard123",
+    "password": " ",
     "database": "pokr",
     "host": "127.0.0.1",
     "dialect": "postgres"
