@@ -1,0 +1,7 @@
+.fa-stack .fa:{
+    color: #bababa;
+    cursor: pointer;
+}
+.fa-stack:hover .fa{
+    color: #474646;
+}

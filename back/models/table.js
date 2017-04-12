@@ -14,6 +14,14 @@ module.exports = function(sequelize, DataTypes) {
         type: DataTypes.INTEGER,
         allowNull:false
       },
+      minBuyin:{
+        type: DataTypes.INTEGER,
+        allowNull:false
+      },
+      maxBuyin:{
+        type: DataTypes.INTEGER,
+        allowNull:false
+      },
       status:{
         type:DataTypes.INTEGER,
         allowNull:false,

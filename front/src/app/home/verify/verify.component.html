@@ -18,11 +18,17 @@
 				<div class="form-group text-xs-center" style="padding-top: 10px;">
 					<button type="submit" class="btn btn-success">Submit</button>
 				</div>
+				<div class="form-group row align-center">
+					<span class="btn">Did not receive code?</span>
+					<button type="button" class="btn btn-outline-info" (click)="resend()">Resend</button>
+				</div>
+				<div class="alert alert-danger" role="alert" *ngIf="errorMsg!=''">
+					<strong>Oh snap!</strong> {{errorMsg}}
+				</div>
+				<div class="alert alert-success" role="alert" *ngIf="showEmail!=''">
+					<strong>Email sent to :</strong> {{showEmail}}
+				</div>
 			</form>
-			<div class="row align-center"><span class="btn">Did not receive code?</span><button type="button" class="btn btn-outline-info" (click)="resend()">Resend</button></div>
-			<div class="alert alert-success" role="alert" style="text-align: center;margin-top: 15px;" *ngIf="showMessage">
-			  Email sent to {{address}}
-			</div>
 		</div>
 	</div>
 	<div class="container hidden-md-down" style="background: #21b2fe">

@@ -8,7 +8,7 @@
 		</nav>
 		<div class="container" style="padding-top: 20px;">
 			<div class="row align-center"><span style="font-weight: 300;font-size: 2.5rem;">Register</span></div>
-			<form (ngSubmit)="login()">
+			<form (ngSubmit)="register()">
 				<div class="form-group">
 					<label for="companyName">Username</label>
 					<input type="text" class="form-control" id="companyName" placeholder="Enter your username..."  [ngModelOptions]="{standalone: true}" [(ngModel)]="user.username" required>
@@ -27,6 +27,9 @@
 				</div>
 				<div class="form-group text-xs-center" style="padding-top: 10px;">
 					<button type="submit" class="btn btn-success">Register</button>
+				</div>
+				<div class="alert alert-danger" role="alert" *ngIf="errorMsg!=''">
+					<strong>Oh snap!</strong> {{errorMsg}}
 				</div>
 			</form>
 		</div>
