@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule  } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 
 import { GameRoutingModule } from './game-routing.module';
 import { TablelistComponent } from './tablelist/tablelist.component';
@@ -11,8 +11,7 @@ import { GameComponent } from './game.component';
   imports: [
     CommonModule,
     GameRoutingModule,
-    FormsModule,
-    ReactiveFormsModule
+    FormsModule
   ],
   declarations: [TablelistComponent, TableComponent, GameComponent]
 })

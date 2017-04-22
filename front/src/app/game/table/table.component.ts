@@ -1,8 +1,14 @@
+<<<<<<< HEAD
 import { Component, OnInit, Input } from '@angular/core';
 import { Router, ActivatedRoute, Params } from '@angular/router';
 import { SocketService } from '../../socket.service';
 
 import { ChatService } from '../chat.service';
+=======
+import { Component, OnInit } from '@angular/core';
+import { Router, ActivatedRoute, Params } from '@angular/router';
+import { SocketService } from '../../socket.service';
+>>>>>>> 9244229664a349cb3a0782833db75f99f22abe8f
 // import * as io from "socket.io-client";
 
 @Component({
@@ -28,6 +34,7 @@ export class TableComponent implements OnInit {
   ngAfterViewInit(){
     
   }
+  
   trackByIndex(index: number, obj: any): any {
     return index;
   }

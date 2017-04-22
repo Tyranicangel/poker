@@ -43,5 +43,4 @@ export class SocketService {
   close() {
     this.socket.disconnect();
   }
-
 }
