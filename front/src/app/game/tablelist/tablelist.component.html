@@ -1,0 +1,28 @@
+<div class="container-fluid" style="display: flex; justify-content: center; align-content: center">
+	<table class="table table-striped">
+		<thead>
+			<tr>
+				<th>
+					Table
+				</th>
+				<th>
+					Stakes
+				</th>
+				<th>
+					BuyIn
+				</th>
+				<th>
+					Join
+				</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr *ngFor="let table of tableList">
+				<td>{{table.name}}</td>
+				<td>{{table.smallBlind}}/{{table.bigBlind}}</td>
+				<td>{{table.minBuyin}}/{{table.maxBuyin}}</td>
+				<td><a [routerLink]="['table',table.id]" class="btn btn-success btn-xs">Join</a></td>
+			</tr>
+		</tbody>
+	</table>
+</div>

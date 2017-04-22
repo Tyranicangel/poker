@@ -1,0 +1,102 @@
+.chat{
+    display: flex;
+    flex-flow: column;
+    width: 280px;
+    height: 300px;
+    position: absolute;
+    bottom: 0px;
+    right: 5px;
+}
+.chat_header{
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
+    color: #e5e5e5;
+}
+.chat_box{
+    border: 1px solid #bababa;
+    width: 100%;
+    padding: 0px;
+    flex: 1;
+    display: flex;
+    flex-flow: column;
+}
+.chat_area{
+    flex: 1;
+    padding: 0px;
+    background: #f5f5f5;
+}
+.chat_message{
+    width: 100%;
+    padding: 0px;
+    height: 30px;
+    border-top: 1px solid #e5e5e5;
+}
+.chat_input{
+    border: 0px;
+    outline: none;
+    padding: 0px 5px;
+    height: 30px;
+    width: 232px;
+}
+.chat_send{
+    line-height: 30px;
+    border-left: 1px solid #bababa;
+    background: #b5b5b5;
+    float: right;
+    padding:0px 7px;
+    font-size: 14px;
+}
+.fa{
+    cursor: pointer;
+}
+.fa:hover{
+    color: #ffffff;
+}
+.table{
+    background: url('../../../assets/poker_table.png');
+    width:600px;
+    height: 345px;
+    position: relative;
+    margin-top: 70px;
+}
+.player{
+    width: 80px;
+    height: 80px;
+    position: absolute;
+}
+.avatar{
+    width: 80px;
+    height: 80px;
+    border-radius: 40px;
+    background: rgba(0,0,0,0.75);
+    position: absolute;
+    top: 0px;
+    left: 0px;
+}
+
+div.chat-messages{
+    padding: 0;
+}
+
+div.chat-messages > div.message-wrapper{
+    padding: 0px;
+    margin: 0px;
+    max-width: 100%;
+}
+
+
+div.chat-messages > div.message-wrapper > div.alert{
+    padding: 5px;
+    margin: 5px;
+    max-width: 80%;
+    display: inline-block;
+}
+
+
+div.chat-messages > div.message-wrapper.left{
+    text-align: left;
+}
+
+div.chat-messages > div.message-wrapper.right{
+    text-align: right;
+}

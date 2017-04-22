@@ -1,0 +1,40 @@
+<div class="full-screen" style="display: flex;flex-flow: row;">
+	<div class="container left_part">
+		<nav class="navbar navbar-light">
+			<a routerLink="" class="navbar-brand">
+				<img src="assets/logo_original.jpg" width="30" height="30" class="d-inline-block align-top" alt="">
+				Pokr
+			</a>
+		</nav>
+		<div class="container" style="padding-top: 20px;">
+			<div class="row align-center"><span style="font-weight: 300;font-size: 2.5rem;">Login</span></div>
+			<form (ngSubmit)="login()">
+				<div class="form-group">
+					<label for="companyName">Username</label>
+					<input type="text" class="form-control" id="companyName" placeholder="Enter your username..."  [ngModelOptions]="{standalone: true}" [(ngModel)]="user.username" required>
+				</div>
+				<div class="form-group">
+					<label for="companyName">Password</label>
+					<input type="password" class="form-control" id="companyName" placeholder="Enter your password..."  [ngModelOptions]="{standalone: true}" [(ngModel)]="user.password" required>
+				</div>
+				<div class="form-group text-xs-center" style="padding-top: 10px;">
+					<button type="submit" class="btn btn-success">Login</button>
+				</div>
+				<div class="form-group text-xs-center">
+					<span>Forgot your password? <a routerLink="/forgot">Reset</a></span>
+				</div>
+				<div class="alert alert-danger" role="alert" *ngIf="errorMsg!=''">
+					<strong>Oh snap!</strong> {{errorMsg}}
+				</div>
+			</form>
+		</div>
+	</div>
+	<div class="container" style="background: #21b2fe">
+		<nav class="navbar navbar-dark" style="color: #ffffff !important;">
+			<span class="navbar-text float-xs-right">
+				Don't have a Pokr account?
+				<a routerLink="/register" style="color: #ffffff !important;" class="btn btn-outline-success">Register</a>
+			</span>
+		</nav>
+	</div>
+</div>
