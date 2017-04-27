@@ -8,7 +8,26 @@ const config = require('../config');
 io.set("origins", "*:*");
 
 let getTableStatus=(tableId)=>{
-    return "Hello";
+    models.Table.find({
+      where:{
+        id:tableId
+      },
+      include:[
+        {
+          model:models.Game,
+          where:{
+            status:1
+          },
+          include:[
+            {
+              model:models.GameUser
+            }
+          ]
+        }
+      ]
+    }).then(table=>{
+      return table;
+    })
 }
 
 let getTableGame=(tableId)=>{
@@ -30,7 +49,7 @@ io.on("connection", (socket) => {
         socket._userId=decoded.id;
         socket._tableId=tableId;
         socket.join(tableId);
-				socket.emit("auth",decoded.id);
+				socket.emit("auth",{userId:decoded.id});
         models.TableUser.find({
           where:{
             TableId:socket._tableId,
@@ -56,10 +75,13 @@ io.on("connection", (socket) => {
                 status:{$ne:2}
               },
               include:[
-                {model:models.User}
+                {
+                  model:models.User
+                  // attributes:['username','name','avatar']
+                }
               ]
             }).then(tableusers=>{
-              socket.emit("table:status",getTableStatus);
+              socket.emit("table:status",getTableStatus(socket._tableId));
               io.to(socket._tableId).emit("chat:status",{message:data.name+" has joined the lobby.",tableusers:tableusers})
             })
           });

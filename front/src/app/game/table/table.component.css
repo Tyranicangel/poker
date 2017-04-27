@@ -75,6 +75,7 @@
 }
 
 div.chat-messages{
+    height: 221px;
     padding: 0;
 }
 
@@ -99,4 +100,9 @@ div.chat-messages > div.message-wrapper.left{
 
 div.chat-messages > div.message-wrapper.right{
     text-align: right;
+}
+
+div.chat-messages > div.message-wrapper.center{
+    text-align: center !important;
+    font-style: italic;
 }

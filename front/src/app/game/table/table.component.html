@@ -40,38 +40,41 @@
     </div>
   </div>
 </div>
-<!--<div class="chat">
-  <nav class="navbar navbar-light chat_header" [style.background-color]="getBGColor()">
+<div class="chat">
+  <nav class="navbar navbar-inverse bg-inverse chat_header">
       <span class="nav-brand">
         Chat Room
-        <span class="status" *ngIf="chat.joined">
-          <i class="fa fa-check-circle text-success"></i> [Connected]
-        </span>
       </span>
       
       <!--<span class="float-xs-right">
 			  <i class="fa fa-times" aria-hidden="true"></i>
 		  </span>-->
-  <!--</nav>
-  <div class="container-fluid chat_box" *ngIf="!chat.joined">
-    <button class="btn btn-success" (click)="onclickJoin()">JOIN</button>
-  </div>
-  <div class="container-fluid chat_box" *ngIf="chat.joined">
+  </nav>
+  <div class="container-fluid chat_box">
       <div class="chat-messages">
-        <div class="message-wrapper" [ngClass]="{'right': msg.userId == chat.userId, 'left': msg.userId != chat.userId}" role="alert" 
+        <div class="message-wrapper" *ngFor="let msg of chatMessages;let i=index" [ngClass]="{'right':msg.TableUserId==tableUserId,'center':msg.TableUserId=='None','left':msg.TableUserId!=tableUserId}" role="alert"
+>
+            <div *ngIf="msg.TableUserId=='None'" style="text-align: center; font-style: italic;">
+              {{msg.message}}
+            </div>
+            <div *ngIf="msg.TableUserId!='None'" class="alert" [ngClass]="{'alert-info': msg.TableUserId == tableUserId, 'alert-warning': msg.TableUserId != tableUserId}">
+              {{getUserName(msg.TableUserId)}} : {{msg.message}}
+            </div>
+        </div>
+        <!--<div class="message-wrapper" [ngClass]="{'right': msg.userId == chat.userId, 'left': msg.userId != chat.userId}" role="alert" 
             *ngFor="let msg of chatMessages; let i = index; trackBy: trackByIndex">
           <div class="alert" [ngClass]="{'alert-info': msg.userId == chat.userId, 'alert-warning': msg.userId != chat.userId}">
             {{msg.message}}
           </div>
-        </div>
+        </div>-->
       </div>
       <div class="container-fluid chat_message">
-        <form>
+        <form (ngSubmit)="sendMessage()">
           <div class="input-group">
-            <input type="text" class="form-control" placeholder="Message..." [ngModelOptions]="{standalone: true}"  [(ngModel)]="chatMessage">
-            <span class="input-group-addon" (click)="onclickSend()">Send</span>
+            <input type="text" class="form-control" placeholder="Message..." [ngModelOptions]="{standalone: true}"  [(ngModel)]="chatMessage" required>
+            <button type="submit" class="input-group-addon">Send</button>
           </div>
         </form>
       </div>
   </div>
-</div>-->
+</div>

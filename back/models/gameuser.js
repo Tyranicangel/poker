@@ -26,8 +26,8 @@ module.exports = function(sequelize, DataTypes) {
       associate: function(models) {
         GameUser.belongsTo(models.Game);
         GameUser.belongsTo(models.TableUser);
-        GameUser.hasMany(models.UserCard, {as:'Hand'});
-        GameUser.hasMany(models.UserPlay, {as:'Play'});
+        GameUser.hasMany(models.UserCard);
+        GameUser.hasMany(models.UserPlay);
       }
     }
   });

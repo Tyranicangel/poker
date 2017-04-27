@@ -5,7 +5,8 @@
     "database": "poker",
     "host": "127.0.0.1",
     "dialect": "postgres",
-    "seederStorage": "sequelize"
+    "seederStorage": "sequelize",
+    "logging": false
   },
   "test": {
     "username": "root",

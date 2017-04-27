@@ -10,7 +10,7 @@ module.exports = function(sequelize, DataTypes) {
     classMethods: {
       associate: function(models) {
         GamePot.belongsTo(models.Game);
-        GamePot.hasMany(models.PotUser, {as:'Player'});
+        GamePot.hasMany(models.PotUser);
       }
     }
   });

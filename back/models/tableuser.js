@@ -26,7 +26,6 @@ module.exports = function(sequelize, DataTypes) {
       associate: function(models) {
         TableUser.belongsTo(models.Table);
         TableUser.belongsTo(models.User);
-        TableUser.hasMany(models.Chat, {as:'Message'});
       }
     }
   });
