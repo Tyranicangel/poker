@@ -72,7 +72,6 @@
     position: absolute;
     top: 0px;
     left: 0px;
-<<<<<<< HEAD
 }
 
 div.chat-messages{
@@ -101,6 +100,3 @@ div.chat-messages > div.message-wrapper.left{
 div.chat-messages > div.message-wrapper.right{
     text-align: right;
 }
-=======
-}
->>>>>>> 9244229664a349cb3a0782833db75f99f22abe8f

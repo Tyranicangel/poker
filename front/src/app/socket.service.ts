@@ -13,12 +13,10 @@ export class SocketService {
   }
 
   connect(tableId: string) {
-    console.log('SOCKET CONNECTED')
-    this.socket = io.connect(this.url, { query: "tableId=" + tableId });
+    this.socket = io.connect(this.url, { query: "tableId=" + tableId+'&userToken='+localStorage.getItem('PokrToken') });
   }
 
   send(method: string, data: any) {
-    console.log(method, data)
     this.socket.emit(method, data);
   }
 

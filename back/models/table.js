@@ -26,11 +26,6 @@ module.exports = function(sequelize, DataTypes) {
         type:DataTypes.INTEGER,
         allowNull:false,
         defaultValue:0
-      },
-      socket:{
-        type: DataTypes.STRING,
-        unique:true,
-        allowNull:false
       }
   }, {
     classMethods: {
