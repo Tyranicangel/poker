@@ -6,6 +6,7 @@ import { GameRoutingModule } from './game-routing.module';
 import { TablelistComponent } from './tablelist/tablelist.component';
 import { TableComponent } from './table/table.component';
 import { GameComponent } from './game.component';
+import { Angular2AutoScroll } from 'angular2-auto-scroll/lib/angular2-auto-scroll.directive';
 
 @NgModule({
   imports: [
@@ -13,6 +14,6 @@ import { GameComponent } from './game.component';
     GameRoutingModule,
     FormsModule
   ],
-  declarations: [TablelistComponent, TableComponent, GameComponent]
+  declarations: [TablelistComponent, TableComponent, GameComponent, Angular2AutoScroll]
 })
 export class GameModule { }

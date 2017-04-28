@@ -1,13 +1,14 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute, Params } from '@angular/router';
 import { SocketService } from '../../socket.service';
 import { ChatService } from '../chat.service';
+
 // import * as io from "socket.io-client";
 
 @Component({
   selector: 'app-table',
   templateUrl: './table.component.html',
-  styleUrls: ['./table.component.css']
+  styleUrls: ['./table.component.css'],
 })
 export class TableComponent implements OnInit {
   private tableId:string;
@@ -16,6 +17,15 @@ export class TableComponent implements OnInit {
   private tableUsers: any[] = [];
   private userId:number;
   private tableUserId:number;
+  private gameSettings: {
+    position:number,
+    BuyIn:number
+  }
+
+  private userAction:{
+    bet:number
+  }
+
   constructor(private activatedRoute:ActivatedRoute, private socket:SocketService, /*private chat:ChatService*/) {
       this.activatedRoute.params.subscribe((params:Params)=>{
         this.tableId=params['id'];
@@ -29,27 +39,27 @@ export class TableComponent implements OnInit {
    }
 
    sit(){
-    
+      this.socket.send("sit",this.gameSettings);
    }
 
    check(){
-
+      this.socket.send("check",this.userAction);
    }
 
    raise(){
-
+      this.socket.send("raise",this.userAction);
    }
 
    fold(){
-
+      this.socket.send("fold",this.userAction);
    }
 
    stand(){
-
+    this.socket.send("stand",this.userAction);
    }
 
    leave(){
-     
+     this.socket.send("leave",this.userAction);
    }
 
   ngOnInit() {
@@ -72,7 +82,6 @@ export class TableComponent implements OnInit {
 
     this.socket.receive("chat:message").subscribe((data)=>{
       this.chatMessages.push(data['dat']);
-      console.log(this.chatMessages);
     })
   }
 
@@ -90,19 +99,4 @@ export class TableComponent implements OnInit {
   ngAfterViewInit(){
     
   }
-  
-  // trackByIndex(index: number, obj: any): any {
-  //   return index;
-  // }
-
-  // getBGColor(){
-  //   return this.chat.joined ? 'green': 'gray';
-  // }
-  // onclickJoin(){
-  //   this.chat.joinRoom();
-  // } 
-  // onclickSend(){
-  //   this.chat.sendMessage(this.chatMessage);
-  //   this.chatMessage = "";
-  // }
 }

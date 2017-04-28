@@ -51,10 +51,10 @@
 		  </span>-->
   </nav>
   <div class="container-fluid chat_box">
-      <div class="chat-messages">
+      <div angular2-auto-scroll lock-y-offset="10" observe-attributes class="chat-messages">
         <div class="message-wrapper" *ngFor="let msg of chatMessages;let i=index" [ngClass]="{'right':msg.TableUserId==tableUserId,'center':msg.TableUserId=='None','left':msg.TableUserId!=tableUserId}" role="alert"
 >
-            <div *ngIf="msg.TableUserId=='None'" style="text-align: center; font-style: italic;">
+            <div *ngIf="msg.TableUserId=='None'" style="text-align: center; font-style: italic; line-height:46px;">
               {{msg.message}}
             </div>
             <div *ngIf="msg.TableUserId!='None'" class="alert" [ngClass]="{'alert-info': msg.TableUserId == tableUserId, 'alert-warning': msg.TableUserId != tableUserId}">
