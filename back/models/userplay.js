@@ -10,6 +10,11 @@ module.exports = function(sequelize, DataTypes) {
         type: DataTypes.INTEGER,
         allowNull:false,
         defaultValue:0
+      },
+      gameStatus:{
+        type: DataTypes.INTEGER,
+        allowNull:false,
+        defaultValue:1
       }
   }, {
     classMethods: {

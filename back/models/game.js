@@ -5,7 +5,12 @@ module.exports = function(sequelize, DataTypes) {
         type: DataTypes.INTEGER,
         allowNull:false,
         defaultValue:1
-      }
+      },
+    currentBet:{
+        type: DataTypes.INTEGER,
+        allowNull:false,
+        defaultValue:0
+    }
   }, {
     classMethods: {
       associate: function(models) {

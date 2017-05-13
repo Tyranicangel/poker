@@ -5,6 +5,7 @@ const config = require('../config');
 const main = require('./main');
 const user = require('./user');
 const table = require('./table');
+const defaults = require('./default');
 
 router.get('/',(req,res,next)=>{
 	res.json(["Hello","World"]);
@@ -37,5 +38,6 @@ var auth=(req,res,next)=>{
 router.use('/main',main);
 router.use('/user',auth,user);
 router.use('/table',auth,table);
+router.use('/default',defaults);
 
 module.exports = router;

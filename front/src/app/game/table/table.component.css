@@ -78,6 +78,7 @@ div.chat-messages{
     height: 221px;
     padding: 0;
     overflow-y: scroll;
+    background: #ffffff;
 }
 
 div.chat-messages > div.message-wrapper{
@@ -106,4 +107,72 @@ div.chat-messages > div.message-wrapper.right{
 div.chat-messages > div.message-wrapper.center{
     text-align: center !important;
     font-style: italic;
+}
+.fa-plus{
+    width: 80px;
+    height: 80px;
+    line-height: 80px;
+    text-align: center;
+    color: #ffffff;
+    font-size: 14px;
+}
+.useravatar{
+    width: 80px;
+    height: 80px;
+    border-radius: 40px;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+}
+.username{
+    position: absolute;
+    top: 85px;
+    left: 0px;
+    min-width: 80px;
+    text-align: center;
+    background: #454545;
+    color: #bababa;
+    padding: 0px 3px;
+    border-radius: 8px;
+}
+.actionbox{
+    position: absolute;
+    left:20px;
+    top:200px;
+    width:100px;
+}
+.buttonrow{
+    padding-bottom: 10px;
+}
+.buttons{
+    width:100%;
+}
+.cardPlace{
+    background: transparent;
+    position: absolute;
+    width: 275px;
+    left: 162px;
+    top: 130px;
+}
+.card{
+    background: #ffffff;
+    border: 1px solid #bababa;
+    border-radius: 2px;
+    position: relative;
+    float: left;
+    width: 45px;
+    height: 60px;
+    margin: 5px;
+}
+.cardValue{
+    position: absolute;
+    font-weight: bold;
+    font-size: 18px;
+    line-height: 18px;
+    margin: 2px;
+}
+.cardSuit{
+    position: absolute;
+    width: 45px;
+    bottom: 0px;
 }
