@@ -22,4 +22,14 @@ router.get('/card',(req,res,next)=>{
     res.json(["Hey"]);
 })
 
+router.get('/reset',(req,res,next)=>{
+    models.UserPlay.destroy({where:{}});
+    models.UserCard.destroy({where:{}});
+    models.GameUser.destroy({where:{}});
+    models.GameCard.destroy({where:{}});
+    models.Game.destroy({where:{}});
+    models.TableUser.destroy({where:{}});
+    res.json(["Helo"]);
+})
+
 module.exports = router;

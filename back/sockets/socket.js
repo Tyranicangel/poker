@@ -45,24 +45,131 @@ updateGameStatus=(tableId)=>{
         split=(i+1)%gameusers.length;
         newgameusers=gameusers.slice(split).concat(gameusers.slice(0,split));
         oldstatus=game.status;
-        j=0;
-        currentflag=false;
-        allcheck=true;
-        while(true){
-          if(!currentflag&&newgameusers[j%newgameusers.length]['isCurrent']){
-            currentflag=true;
-          }
-          if(currentflag&&newgameusers[j%newgameusers.length]['isCurrent']){
-            //complete the game
-          }
-          if(currentflag&&!newgameusers[j%newgameusers.length]['isCurrent']){
-            //ifend is reached and all check go to next status
-            //if !allcheck or not end go to next user
-          }
-          if(!currentflag){
-            //check for any unraised
-          }
+        var j=0;
+        var statusflag="none";
+        var currentflag=false;
+        var lastraised=-1;
+        var noofusers=0;
+        var array=[];
+        for(i=0;i<newgameusers.length;i++){
+          array.push(newgameusers[i]['id']);
         }
+        models.UserPlay.findAll({
+          where:{
+            playType:3,
+            id:array
+          },
+          order:[['id','DESC']]
+        }).then(uplay=>{
+          if(uplay.length>0){
+            lastraised=uplay[0].id;
+          }
+          while(j<=newgameusers.length){
+            if(currentflag){
+              if(newgameusers[j]['id']==lastraised || newgameusers[j]['isCurrent']){
+                if(noofusers==1){
+                  statusflag="end";
+                  break;
+                }
+                else{
+                  if(game.status==3){
+                    statusflag="end";
+                  }
+                  else{
+                    statusflag="next";
+                  }
+                  break;
+                }
+              }
+              else{
+                if(newgameusers[j]['status']!=0){
+                   if(newgameusers[j]['status']==1){
+                      statusflag="current";
+                      break;
+                   }
+                  else if(lastraised!=-1){
+                    statusflag="current";
+                    break;
+                  }
+                }
+              }
+            }
+            else{
+              if(newgameusers[j]['isCurrent']){
+                currentflag=true;
+              }
+            }
+            if(newgameusers[j]['status']!=0){
+              noofusers++;
+            }
+            j=(j+1)%newgameusers.length;
+          }
+          if(statusflag=="current"){
+            models.GameUser.update(
+              {
+                isCurrent:false
+              },
+              {
+                where:{
+                  GameId:game.id,
+                  isCurrent:true
+                }
+              }).then(u=>{
+              models.GameUser.update({
+                  isCurrent:true,
+                },
+                {
+                  where:{
+                    id:newgameusers[j]['id']
+                  }
+              }).then(dummy=>{
+                getTableStatus(tableId);
+              })
+            })
+          }
+          else if(statusflag=="next"){
+            models.GameUser.update(
+              {
+                isCurrent:false
+              },
+              {
+                where:{
+                  GameId:game.id,
+                  isCurrent:true
+                }
+              }).then(u=>{
+              models.GameUser.update(
+                {
+                  status:1
+                },
+                {
+                  where:{
+                    GameId:game.id
+                  }
+                }
+              ).then(u1=>{
+                models.GameUser.update({
+                    isCurrent:true,
+                  },
+                  {
+                    where:{
+                      id:newgameusers[0]['id']
+                    }
+                }).then(dummy=>{
+                  game.update({
+                    status:game.status+1,
+                    currentBet:0
+                  }).then(gdata=>{
+                    getTableStatus(tableId);
+                  })
+                })
+              })
+            })
+          }
+          else if(statusflag=="end"){
+            console.log("end");
+          }
+        });
       })
     })
   // getTableStatus(tableId);
@@ -93,7 +200,6 @@ let checkGame=(tableId)=>{
         }).then((games)=>{
           if(games.length==0){
             let cardList=generateRandom(5+tableusers.length*2);
-            console.log(cardList);
             models.Card.findAll({}).then(cards=>{
               models.Game.create({
                 TableId:tableId,
@@ -109,16 +215,16 @@ let checkGame=(tableId)=>{
                 }
                 let startPos=0;
                 for(i=0;i<tableusers.length;i++){
-                  var counter=-1;
+                  var counter=4;
                   dealer=false;
                   smallBlind=false;
                   bigBlind=false;
                   current=false;
                   status=1;
                   if(i==startPos%tableusers.length){dealer=true}
-                  if(i==(startPos+1)%tableusers.length){smallBlind=true;status=4}
-                  if(i==(startPos+2)%tableusers.length){bigBlind=true;;status=4}
-                  if(i==(startPos+3)%tableusers.length){current=true}
+                  if(i==(startPos+1)%tableusers.length){smallBlind=true;}
+                  if(i==(startPos+2)%tableusers.length){bigBlind=true;}
+                  if(i==(startPos+3)%tableusers.length){current=true;}
                   alist.push(models.GameUser.create({
                       isSmallBlind:smallBlind,
                       isBigBlind:bigBlind,
@@ -130,26 +236,29 @@ let checkGame=(tableId)=>{
                     }).then(gameuser=>{
                       if(gameuser.isSmallBlind){
                         alist.push(models.UserPlay.create({
-                          playType:3,
+                          playType:2,
                           betAmount:table.smallBlind,
                           GameUserId:gameuser.id
                         }))
+                        //reduce user chips
                       }
                       if(gameuser.isBigBlind){
                         alist.push(models.UserPlay.create({
-                          playType:3,
+                          playType:2,
                           betAmount:table.bigBlind,
                           GameUserId:gameuser.id
                         }))
+                        //reduce user chips
                       }
                       counter++;
                       alist.push(models.UserCard.create({
                         GameUserId:gameuser.id,
-                        CardId:cards[cardList[5+counter*2]].id
+                        CardId:cards[cardList[counter]].id
                       }));
+                      counter++;
                       alist.push(models.UserCard.create({
                         GameUserId:gameuser.id,
-                        CardId:cards[cardList[6+counter*2]].id
+                        CardId:cards[cardList[counter]].id
                       }));
                     }));
                 }
@@ -272,6 +381,7 @@ let getTableStatus=(tableId)=>{
           }).then(game=>{
             table.game=game;
             //Add previous plays of the users
+            //Add game cards
             sendUserInfo(tableId);
             io.to(tableId).emit("table:status",table);
           })
@@ -416,27 +526,6 @@ io.on("connection", (socket) => {
       })
     })
 
-    socket.on("check",data=>{
-      getTableGame(socket._tableUserId).then(game=>{
-        models.GameUser.find({
-          where:{
-            GameId:game.id,
-            TableUserId:socket._tableUserId
-          }
-        }).then(user=>{
-          user.update({status:2});
-          if(user.isCurrent){
-            models.UserPlay.create({
-              playType:1,
-              GameUserId:user.id
-            }).then(dat=>{
-              getTableStatus(socket._tableId)
-            })
-          }
-        })
-      })
-    })
-
     socket.on("raise",data=>{
       getTableGame(socket._tableUserId).then(game=>{
         models.GameUser.find({
@@ -482,6 +571,26 @@ io.on("connection", (socket) => {
       })
     })
 
+    socket.on("check",data=>{
+      getTableGame(socket._tableId).then(game=>{
+        models.GameUser.find({
+          where:{
+            GameId:game.id,
+            TableUserId:socket._tableUserId
+          }
+        }).then(user=>{
+          user.update({status:2});
+            models.UserPlay.create({
+              playType:1,
+              GameUserId:user.id,
+              gameStatus:game.status
+            }).then(dat=>{
+              updateGameStatus(socket._tableId);
+            })
+        })
+      })
+    })
+
     socket.on("call",data=>{
       getTableGame(socket._tableId).then(game=>{  
         models.GameUser.find({
@@ -491,16 +600,15 @@ io.on("connection", (socket) => {
           }
         }).then(user=>{
           user.update({status:3});
-          // models.UserPlay.create({
-          //   playType:2,
-          //   betAmount:data.bet,
-          //   GameUserId:user.id,
-          //   gameStatus:gmae.status
-          // }).then(dat=>{
-          //   updateGameStatus(socket._tableId)
-          // })
+          models.UserPlay.create({
+            playType:2,
+            betAmount:data.bet,
+            GameUserId:user.id,
+            gameStatus:game.status
+          }).then(dat=>{
+            updateGameStatus(socket._tableId);
+          })
           //Reduce user chips
-          updateGameStatus(socket._tableId)
         })
       })
     })
@@ -510,7 +618,8 @@ io.on("connection", (socket) => {
         models.GameUser.find({
           where:{
             GameId:game.id,
-            TableUserId:socket._tableUserId
+            TableUserId:socket._tableUserId,
+            gameStatus:game.status
           }
         }).then(user=>{
           user.update({status:0});
