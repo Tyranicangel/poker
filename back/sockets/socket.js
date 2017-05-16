@@ -2,6 +2,7 @@ var io = require("socket.io")();
 var models = require("../models");
 const jwt = require('jsonwebtoken');
 const config = require('../config');
+const DBUtils = require('./utils');
 
 io.set("origins", "*:*");
 
@@ -15,172 +16,108 @@ generateRandom=(num)=>{
   return arr;
 }
 
-updateGameStatus=(tableId)=>{
-  models.Game.find({
-      where:{
-        status:{$ne:0},
-        TableId:tableId
+const {
+  getGameUsers,
+  getCurrentStatusFlag,
+  resetIsCurrentForGame,
+  setAsCurrentPlayer
+} = DBUtils
+
+
+const updateGameStatus = (tableId) => {
+  let gameusers = [];
+  let newgameusers = [];
+  let j = 0;
+  let game;
+
+  return models.Game
+    .find({
+      where: {
+        status: { $ne: 0 },
+        TableId: tableId
       }
-    }).then(game=>{
-      models.GameUser.findAll({
-        where:{
-          GameId:game.id
-        },
-        order:[['id','DESC']],
-        include:{
-          model:models.TableUser
-        },
-        raw:true
-      }).then(gameusers=>{
-        gameusers.sort((a,b)=>{return a['TableUser.position']-b['TableUser.position']});
-        i=0;
-        while(i<gameusers.length){
-          if(gameusers[i]['isBigBlind']){
-            break; 
-          }
-          i++;
-        }
-        split=(i+1)%gameusers.length;
-        newgameusers=gameusers.slice(split).concat(gameusers.slice(0,split));
-        oldstatus=game.status;
-        var j=0;
-        var statusflag="none";
-        var currentflag=false;
-        var lastraised=-1;
-        var noofusers=0;
-        var array=[];
-        for(i=0;i<newgameusers.length;i++){
-          array.push(newgameusers[i]['id']);
-        }
-        models.UserPlay.findAll({
-          where:{
-            playType:3,
-            id:array
-          },
-          order:[['id','DESC']]
-        }).then(uplay=>{
-          if(uplay.length>0){
-            lastraised=uplay[0].id;
-          }
-          while(j<=newgameusers.length){
-            if(currentflag){
-              if(newgameusers[j]['id']==lastraised || newgameusers[j]['isCurrent']){
-                if(noofusers==1){
-                  statusflag="end";
-                  break;
-                }
-                else{
-                  if(game.status==4){
-                    statusflag="end";
-                  }
-                  else{
-                    statusflag="next";
-                  }
-                  break;
-                }
-              }
-              else{
-                if(newgameusers[j]['status']!=0){
-                   if(newgameusers[j]['status']==1){
-                      statusflag="current";
-                      break;
-                   }
-                  else if(lastraised!=-1){
-                    statusflag="current";
-                    break;
-                  }
-                }
-              }
-            }
-            else{
-              if(newgameusers[j]['isCurrent']){
-                currentflag=true;
-              }
-            }
-            if(newgameusers[j]['status']!=0){
-              noofusers++;
-            }
-            j=(j+1)%newgameusers.length;
-          }
-          if(statusflag=="current"){
-            models.GameUser.update(
-              {
-                isCurrent:false
-              },
-              {
-                where:{
-                  GameId:game.id,
-                  isCurrent:true
-                }
-              }).then(u=>{
-              models.GameUser.update({
-                  isCurrent:true,
-                },
-                {
-                  where:{
-                    id:newgameusers[j]['id']
-                  }
-              }).then(dummy=>{
-                getTableStatus(tableId);
-              })
-            })
-          }
-          else if(statusflag=="next"){
-            models.GameUser.update(
-              {
-                isCurrent:false
-              },
-              {
-                where:{
-                  GameId:game.id,
-                  isCurrent:true
-                }
-              }).then(u=>{
-              models.GameUser.update(
-                {
-                  status:1
-                },
-                {
-                  where:{
-                    GameId:game.id,
-                    status:{$ne:0}
-                  }
-                }
-              ).then(u1=>{
-                q=0;
-                while(q<newgameusers.length){
-                  if(newgameusers[q]['status']!=0){
-                    break;
-                  }
-                  q++;
-                }
-                models.GameUser.update({
-                    isCurrent:true,
-                  },
-                  {
-                    where:{
-                      id:newgameusers[q]['id']
-                    }
-                }).then(dummy=>{
-                  game.update({
-                    status:game.status+1,
-                    currentBet:0
-                  }).then(gdata=>{
-                    getTableStatus(tableId);
-                  })
-                })
-              })
-            })
-          }
-          else if(statusflag=="end"){
-            game.update({status:0}).then(newgame=>{
-              checkGame(tableId);
-            })
-            //decide winner
-          }
-        });
-      })
     })
+    .then(result => {
+      game = result;
+      return getGameUsers(game.id);
+    })
+    .then(results => {
+      gameusers = results;
+      gameusers.sort((a, b) => {
+        return a["TableUser.position"] - b["TableUser.position"];
+      });
+      let i = 0;
+      while (i < gameusers.length) {
+        if (gameusers[i]["isBigBlind"]) {
+          break;
+        }
+        i++;
+      }
+      const split = (i + 1) % gameusers.length;
+      newgameusers = gameusers.slice(split).concat(gameusers.slice(0, split));
+      const oldstatus = game.status;
+      const userIds = [];
+      for (i = 0; i < newgameusers.length; i++) {
+        userIds.push(newgameusers[i]["id"]);
+      }
+      return getGameUserPlays(userIds);
+    })
+    .then(userPlays => {
+      let lastraised = -1;
+      if (userPlays.length > 0) {
+        lastraised = userPlays[0].id;
+      }
+      const statusflag = getCurrentStatusFlag(game, newgameusers);
+
+      if (statusflag == "current") {
+        return resetIsCurrentForGame(game.id).then(() => {
+          const currentPlayerId = newgameusers[j]["id"];
+          return setAsCurrentPlayer(currentPlayerId, game.id).then(dummy => {
+            getTableStatus(tableId);
+          });
+        });
+      } else if (statusflag == "next") {
+        return resetIsCurrentForGame(game.id)
+          .then(() => {
+            return models.GameUser.update(
+              {
+                status: 1
+              },
+              {
+                where: {
+                  GameId: game.id,
+                  status: { $ne: 0 }
+                }
+              }
+            );
+          })
+          .then(() => {
+            let q = 0;
+            while (q < newgameusers.length) {
+              if (newgameusers[q]["status"] != 0) {
+                break;
+              }
+              q++;
+            }
+            const currentPlayerId = newgameusers[q]["id"];
+            return setAsCurrentPlayer(currentPlayerId, game.id).then(() => {
+              return game
+                .update({
+                  status: game.status + 1,
+                  currentBet: 0
+                })
+                .then(gdata => {
+                  getTableStatus(tableId);
+                });
+            });
+          });
+      } else if (statusflag == "end") {
+        return game.update({ status: 0 }).then(newgame => {
+          checkGame(tableId);
+        });
+        //decide winner
+      }
+    });
 }
 
 let checkGame=(tableId)=>{

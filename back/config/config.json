@@ -1,8 +1,8 @@
 {
   "development": {
     "username": "postgres",
-    "password": "noobtard123",
-    "database": "poker",
+    "password": "postgres",
+    "database": "pokr",
     "host": "127.0.0.1",
     "dialect": "postgres",
     "seederStorage": "sequelize",
