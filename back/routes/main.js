@@ -48,10 +48,15 @@ router.put('/register',function(req,res,next){
 				verificationCode:Math.floor((Math.random()*899999) + 100001),
 				isVerified:true
 			}).then(function(user){
-				var token=jwt.sign({id:user.id,username:user.username,active:user.active},config.salt,{
-					expiresIn: '24h'
+				models.UserChip.create({
+					UserId:user.id,
+					value:10000
+				}).then(userchip=>{
+					var token=jwt.sign({id:user.id,username:user.username,active:user.active},config.salt,{
+						expiresIn: '24h'
+					});
+					return res.json(["Success",token]);
 				});
-				return res.json(["Success",token]);
 			});
 		}
 		else{

@@ -3,8 +3,6 @@ var models = require("../models");
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 
-// const { Chat } = models;
-
 io.set("origins", "*:*");
 
 generateRandom=(num)=>{
@@ -72,7 +70,7 @@ updateGameStatus=(tableId)=>{
                   break;
                 }
                 else{
-                  if(game.status==3){
+                  if(game.status==4){
                     statusflag="end";
                   }
                   else{
@@ -144,16 +142,24 @@ updateGameStatus=(tableId)=>{
                 },
                 {
                   where:{
-                    GameId:game.id
+                    GameId:game.id,
+                    status:{$ne:0}
                   }
                 }
               ).then(u1=>{
+                q=0;
+                while(q<newgameusers.length){
+                  if(newgameusers[q]['status']!=0){
+                    break;
+                  }
+                  q++;
+                }
                 models.GameUser.update({
                     isCurrent:true,
                   },
                   {
                     where:{
-                      id:newgameusers[0]['id']
+                      id:newgameusers[q]['id']
                     }
                 }).then(dummy=>{
                   game.update({
@@ -167,12 +173,14 @@ updateGameStatus=(tableId)=>{
             })
           }
           else if(statusflag=="end"){
-            console.log("end");
+            game.update({status:0}).then(newgame=>{
+              checkGame(tableId);
+            })
+            //decide winner
           }
         });
       })
     })
-  // getTableStatus(tableId);
 }
 
 let checkGame=(tableId)=>{
@@ -269,69 +277,95 @@ let checkGame=(tableId)=>{
             })
           }
           else{
-            // game=games[0];
-            // let startPos=0;
-            // if(game['status']==0){
-            //   models.GameUser.find({
-            //     where:{
-            //       GameId:game[0].id,
-            //       isSmallBlind:true
-            //     }
-            //   }).then(gameuser=>{
-            //     for(i=0;i<tableusers.length;i++){
-            //       if(tableusers[i].id=gameuser.TableUserId){
-            //         startPos=i;
-            //       }
-            //     }
-            //   })
-            //   let cardList=generateRandom(5+tableusers.length);
-            //   models.Card.findAll({}).then(cards=>{
-            //     models.Game.create({
-            //       TableId:tableId
-            //     }).then(game=>{
-            //       alist=[];
-            //       for(i=0;i<5;i++){
-            //         alist.push(models.GameCard.create({
-            //             GameId:game.id,
-            //             CardId:cards[i].id
-            //         }));
-            //       }
-            //       for(i=0;i<tableusers.length;i++){
-            //           dealer=false;
-            //           smallBlind=false;
-            //           bigBlind=false;
-            //           current=false;
-            //           if(i==startPos%tableusers.length){dealer=true}
-            //           if(i==(startPos+1)%tableusers.length){smallBlind=true}
-            //           if(i==(startPos+2)%tableusers.length){bigBlind=true}
-            //           if(i==(startPos+3)%tableusers.length){current=true}
-            //           alist.push(models.GameUser.create({
-            //               isSmallBlind:smallBlind,
-            //               isBigBlind:bigBlind,
-            //               isDealer:dealer,
-            //               isCurrent:current,
-            //               GameId:game.id,
-            //               TableUserId:tableusers[i]['id']
-            //             }).then(gameuser=>{
-            //               alist.push(models.UserCard.create({
-            //                 GameUserId:gameuser.id,
-            //                 CardId:cards[5+i*2].id
-            //               }));
-            //               alist.push(models.UserCard.create({
-            //                 GameUserId:gameuser.id,
-            //                 CardId:cards[6+i*2].id
-            //               }));
-            //             }))
-            //         }
-            //         Promise.all(alist).then(data=>{
-            //           getTableStatus(tableId);
-            //         })
-            //     })
-            //   })
-            // }
-            // else{
-            //   getTableStatus(tableId);
-            // }
+            ogame=games[0];
+            let startPos=0;
+            if(ogame['status']==0){
+              models.GameUser.find({
+                where:{
+                  GameId:ogame.id,
+                  isSmallBlind:true
+                },
+                include:{
+                  model:models.TableUser
+                }
+              }).then(gameuser=>{
+                for(i=0;i<tableusers.length;i++){
+                  if(tableusers[i].position>=gameuser.TableUser.position){
+                    startPos=i;
+                  }
+                }
+              })
+              let cardList=generateRandom(5+tableusers.length*2);
+              models.Card.findAll({}).then(cards=>{
+              models.Game.create({
+                TableId:tableId,
+                currentBet:table.bigBlind,
+                order:['id']
+              }).then(game=>{
+                  alist=[];
+                  for(i=0;i<5;i++){
+                    alist.push(models.GameCard.create({
+                        GameId:game.id,
+                        CardId:cards[cardList[i]].id
+                    }));
+                  }
+                  for(i=0;i<tableusers.length;i++){
+                    var counter=4;
+                    dealer=false;
+                    smallBlind=false;
+                    bigBlind=false;
+                    current=false;
+                    status=1;
+                    if(i==startPos%tableusers.length){dealer=true}
+                    if(i==(startPos+1)%tableusers.length){smallBlind=true;}
+                    if(i==(startPos+2)%tableusers.length){bigBlind=true;}
+                    if(i==(startPos+3)%tableusers.length){current=true;}
+                    alist.push(models.GameUser.create({
+                        isSmallBlind:smallBlind,
+                        isBigBlind:bigBlind,
+                        isDealer:dealer,
+                        isCurrent:current,
+                        GameId:game.id,
+                        status:status,
+                        TableUserId:tableusers[i]['id']
+                      }).then(gameuser=>{
+                        if(gameuser.isSmallBlind){
+                          alist.push(models.UserPlay.create({
+                            playType:2,
+                            betAmount:table.smallBlind,
+                            GameUserId:gameuser.id
+                          }))
+                          //reduce user chips
+                        }
+                        if(gameuser.isBigBlind){
+                          alist.push(models.UserPlay.create({
+                            playType:2,
+                            betAmount:table.bigBlind,
+                            GameUserId:gameuser.id
+                          }))
+                          //reduce user chips
+                        }
+                        counter++;
+                        alist.push(models.UserCard.create({
+                          GameUserId:gameuser.id,
+                          CardId:cards[cardList[counter]].id
+                        }));
+                        counter++;
+                        alist.push(models.UserCard.create({
+                          GameUserId:gameuser.id,
+                          CardId:cards[cardList[counter]].id
+                        }));
+                      }));
+                  }
+                  Promise.all(alist).then(data=>{
+                    getTableStatus(tableId);
+                  })
+                })
+              })
+            }
+            else{
+              getTableStatus(tableId);
+            }
           }
         })
       }
@@ -379,11 +413,82 @@ let getTableStatus=(tableId)=>{
               model:models.GameUser
             }
           }).then(game=>{
-            table.game=game;
-            //Add previous plays of the users
-            //Add game cards
-            sendUserInfo(tableId);
-            io.to(tableId).emit("table:status",table);
+            if(game){
+              table.game=game;
+              alist=[];
+              k=0;
+              while(k<table.tableusers.length){
+                if(table.tableusers[k]){
+                  alist.push(models.GameUser.find({
+                    where:{
+                      TableUserId:table.tableusers[k]['id'],
+                      GameId:table.game.id
+                    },
+                    raw:true
+                  }));
+                }
+                k++;
+              }
+              Promise.all(alist).then(data=>{
+                counter=0;
+                plist=[];
+                for(i=0;i<table.tableusers.length;i++){
+                  if(table.tableusers[i]){
+                    table.tableusers[i]['gameuser']=data[counter];
+                    counter++;
+                    plist.push(models.UserPlay.findAll({
+                      where:{
+                        GameUserId:table.tableusers[i]['gameuser']['id'],
+                        gameStatus:table.game.status
+                      },
+                      order:[['id','DESC']],
+                      limit:1,
+                      raw:true
+                    }));
+                  }
+                }
+                Promise.all(plist).then(dat=>{
+                  counter=0;
+                  for(i=0;i<table.tableusers.length;i++){
+                    if(table.tableusers[i]){
+                      if(dat[counter].length>0){
+                        table.tableusers[i]['userplay']=dat[counter][0];
+                      }
+                      counter++;
+                    }
+                  }
+                  models.GameCard.findAll({
+                    where:{
+                      GameId:table.game.id
+                    },
+                    include:{
+                      model:models.Card
+                    },
+                    order:['id'],
+                    raw:true
+                  }).then(gamecards=>{
+                    if(game.status==1){
+                      table.gamecards=[];
+                    }
+                    else if(game.status==2){
+                      table.gamecards=[gamecards[0],gamecards[1],gamecards[2]];
+                    }
+                    else if(game.status==3){
+                      table.gamecards=[gamecards[0],gamecards[1],gamecards[2],gamecards[3]];
+                    }
+                    else if(game.status==4){
+                      table.gamecards=gamecards;
+                    }
+                    sendUserInfo(tableId);
+                    io.to(tableId).emit("table:status",table);
+                  })
+                });
+              });
+            }
+            else{
+              sendUserInfo(tableId);
+              io.to(tableId).emit("table:status",table);
+            }
           })
         })
       });
@@ -403,7 +508,13 @@ let sendUserInfo=(tableId)=>{
         },
         raw:true,
         include:{
-          model:models.TableUser
+          model:models.TableUser,
+          include:{
+            model:models.User,
+            include:{
+              model:models.UserChip
+            }
+          }
         }
       }).then(gameuser=>{
         gameuser.forEach(function(element) {
@@ -526,51 +637,6 @@ io.on("connection", (socket) => {
       })
     })
 
-    socket.on("raise",data=>{
-      getTableGame(socket._tableUserId).then(game=>{
-        models.GameUser.find({
-          where:{
-            GameId:game.id,
-            TableUserId:socket._tableUserId
-          }
-        }).then(user=>{
-          //update game's current bet
-          user.update({status:4});
-          if(user.isCurrent){
-            models.UserPlay.create({
-              playType:3,
-              betAmount:data.bet,
-              GameUserId:user.id
-            }).then(dat=>{
-              getTableStatus(socket._tableId)
-            })
-          }
-        })
-      })
-    })
-
-    socket.on("stand",data=>{
-      getTableGame(socket._tableId).then(game=>{
-        models.GameUser.find({
-          where:{
-            GameId:game.id,
-            TableUserId:socket._tableUserId
-          }
-        }).then(user=>{
-            user.update({status:0});
-            models.UserPlay.create({
-              playType:4,
-              GameUserId:user.id
-            })
-        })
-        models.TableUser.findById(socket._tableUserId).then(tableuser=>{
-          tableuser.update({status:0}).then(response=>{
-            getTableStatus(socket._tableId)
-          })
-        })
-      })
-    })
-
     socket.on("check",data=>{
       getTableGame(socket._tableId).then(game=>{
         models.GameUser.find({
@@ -606,9 +672,55 @@ io.on("connection", (socket) => {
             GameUserId:user.id,
             gameStatus:game.status
           }).then(dat=>{
-            updateGameStatus(socket._tableId);
+            // models.UserChip.decrement({
+            //   value:data.bet
+            // },{
+            //   where:{
+            //     UserId:socket._userId
+            //   }
+            // }).then(userchip=>{
+              updateGameStatus(socket._tableId);
+            // })
           })
-          //Reduce user chips
+          
+        })
+      })
+    })
+
+    socket.on("raise",data=>{
+      getTableGame(socket._tableId).then(game=>{
+        models.GameUser.find({
+          where:{
+            GameId:game.id,
+            TableUserId:socket._tableUserId
+          }
+        }).then(user=>{
+          user.update({status:4});
+            models.UserPlay.create({
+              playType:3,
+              betAmount:data.bet,
+              GameUserId:user.id,
+              gameStatus:game.status
+            }).then(dat=>{
+              models.UserChip.decrement({
+                value:data.bet
+              },{
+                where:{
+                  UserId:socket._userId
+                }
+              }).then(userchip=>{
+                if(data.bet>game.cuurentBet){
+                  game.increment({
+                    currentBet:data.bet
+                  }).then(gmaedat=>{
+                    updateGameStatus(socket._tableId);
+                  })
+                }
+                else{
+                  updateGameStatus(socket._tableId);
+                }
+              })
+            })
         })
       })
     })
@@ -618,18 +730,41 @@ io.on("connection", (socket) => {
         models.GameUser.find({
           where:{
             GameId:game.id,
-            TableUserId:socket._tableUserId,
-            gameStatus:game.status
+            TableUserId:socket._tableUserId
           }
         }).then(user=>{
           user.update({status:0});
           models.UserPlay.create({
             playType:4,
-            GameUserId:user.id
+            GameUserId:user.id,
+            gameStatus:game.status
           }).then(dat=>{
             updateGameStatus(socket._tableId)
           })
           })
+      })
+    })
+
+    socket.on("stand",data=>{
+      getTableGame(socket._tableId).then(game=>{
+        models.GameUser.find({
+          where:{
+            GameId:game.id,
+            TableUserId:socket._tableUserId
+          }
+        }).then(user=>{
+            user.update({status:0});
+            models.UserPlay.create({
+              playType:4,
+              GameUserId:user.id,
+              gameStatus:game.status
+            })
+        })
+        models.TableUser.findById(socket._tableUserId).then(tableuser=>{
+          tableuser.update({status:0}).then(response=>{
+            getTableStatus(socket._tableId)
+          })
+        })
       })
     })
 
