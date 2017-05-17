@@ -1,3 +1,5 @@
+const models = require("../models");
+
 const getGameUsers = gameId => {
   return models.GameUser.findAll({
     where: {
@@ -15,13 +17,13 @@ const getGameUserPlays = userIds => {
   return models.UserPlay.findAll({
     where: {
       playType: 3,
-      id: array
+      id: userIds
     },
     order: [["id", "DESC"]]
   });
 };
 
-const getCurrentStatusFlag = (game, newgameusers) => {
+const getCurrentStatusFlag = (game, newgameusers, j, lastraised) => {
   let currentflag = false;
   let statusflag = "none";
   let noofusers = 0;
@@ -91,9 +93,10 @@ const setAsCurrentPlayer = (userId, gameId) => {
   );
 };
 
-export {
+module.exports = {
   getGameUsers,
   getGameUserPlays,
+  getCurrentStatusFlag,
   resetIsCurrentForGame,
   setAsCurrentPlayer
 };

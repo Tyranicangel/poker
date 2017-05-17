@@ -20,6 +20,7 @@ generateRandom = num => {
 
 const {
   getGameUsers,
+  getGameUserPlays,
   getCurrentStatusFlag,
   resetIsCurrentForGame,
   setAsCurrentPlayer
@@ -68,7 +69,7 @@ const updateGameStatus = tableId => {
       if (userPlays.length > 0) {
         lastraised = userPlays[0].id;
       }
-      const statusflag = getCurrentStatusFlag(game, newgameusers);
+      const statusflag = getCurrentStatusFlag(game, newgameusers, j, lastraised);
 
       if (statusflag == "current") {
         return resetIsCurrentForGame(game.id).then(() => {
