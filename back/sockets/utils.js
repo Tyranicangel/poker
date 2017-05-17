@@ -23,10 +23,14 @@ const getGameUserPlays = userIds => {
   });
 };
 
-const getCurrentStatusFlag = (game, newgameusers, j, lastraised) => {
+const updateGameContext = gameContext => {
+  const { game, newgameusers, lastraised } = gameContext;
+  let { statusflag, j } = gameContext;
   let currentflag = false;
-  let statusflag = "none";
   let noofusers = 0;
+
+
+
   while (j <= newgameusers.length) {
     if (currentflag) {
       if (newgameusers[j]["id"] == lastraised || newgameusers[j]["isCurrent"]) {
@@ -62,7 +66,9 @@ const getCurrentStatusFlag = (game, newgameusers, j, lastraised) => {
     }
     j = (j + 1) % newgameusers.length;
   }
-  return statusflag;
+  gameContext.j = j;
+  gameContext.statusflag = statusflag;
+  return gameContext;
 };
 
 const resetIsCurrentForGame = gameId => {
@@ -96,7 +102,7 @@ const setAsCurrentPlayer = (userId, gameId) => {
 module.exports = {
   getGameUsers,
   getGameUserPlays,
-  getCurrentStatusFlag,
+  updateGameContext,
   resetIsCurrentForGame,
   setAsCurrentPlayer
 };

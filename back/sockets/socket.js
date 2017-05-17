@@ -21,16 +21,20 @@ generateRandom = num => {
 const {
   getGameUsers,
   getGameUserPlays,
-  getCurrentStatusFlag,
+  updateGameContext,
   resetIsCurrentForGame,
   setAsCurrentPlayer
 } = DBUtils;
 
 const updateGameStatus = tableId => {
-  let gameusers = [];
-  let newgameusers = [];
-  let j = 0;
-  let game;
+
+  const gameContext = {
+    newgameusers: [],
+    j: 0,
+    game: null,
+    statusflag: "none",
+    lastraised: -1
+  }
 
   return models.Game
     .find({
@@ -40,11 +44,10 @@ const updateGameStatus = tableId => {
       }
     })
     .then(result => {
-      game = result;
-      return getGameUsers(game.id);
+      gameContext.game = result;
+      return getGameUsers(gameContext.game.id);
     })
-    .then(results => {
-      gameusers = results;
+    .then(gameusers => {
       gameusers.sort((a, b) => {
         return a["TableUser.position"] - b["TableUser.position"];
       });
@@ -56,8 +59,10 @@ const updateGameStatus = tableId => {
         i++;
       }
       const split = (i + 1) % gameusers.length;
-      newgameusers = gameusers.slice(split).concat(gameusers.slice(0, split));
-      const oldstatus = game.status;
+      gameContext.newgameusers = gameusers.slice(split).concat(gameusers.slice(0, split));
+
+      const {newgameusers} = gameContext;
+      const oldstatus = gameContext.game.status;
       const userIds = [];
       for (i = 0; i < newgameusers.length; i++) {
         userIds.push(newgameusers[i]["id"]);
@@ -65,18 +70,21 @@ const updateGameStatus = tableId => {
       return getGameUserPlays(userIds);
     })
     .then(userPlays => {
-      let lastraised = -1;
       if (userPlays.length > 0) {
-        lastraised = userPlays[0].id;
+        gameContext.lastraised = userPlays[0].id;
       }
-      const statusflag = getCurrentStatusFlag(game, newgameusers, j, lastraised);
+
+      updateGameContext(gameContext);
+      
+      const {game, statusflag, j, newgameusers} = gameContext;
 
       if (statusflag == "current") {
         return resetIsCurrentForGame(game.id).then(() => {
           const currentPlayerId = newgameusers[j]["id"];
-          return setAsCurrentPlayer(currentPlayerId, game.id).then(dummy => {
-            getTableStatus(tableId);
-          });
+          console.log(`----- currentPlayerId : ${currentPlayerId} ------`)
+          return setAsCurrentPlayer(currentPlayerId, game.id);
+        }).then(() => {
+          return getTableStatus(tableId);
         });
       } else if (statusflag == "next") {
         return resetIsCurrentForGame(game.id)
@@ -102,20 +110,23 @@ const updateGameStatus = tableId => {
               q++;
             }
             const currentPlayerId = newgameusers[q]["id"];
-            return setAsCurrentPlayer(currentPlayerId, game.id).then(() => {
-              return game
-                .update({
-                  status: game.status + 1,
-                  currentBet: 0
-                })
-                .then(gdata => {
-                  getTableStatus(tableId);
-                });
-            });
+            return setAsCurrentPlayer(currentPlayerId, game.id)
+          })
+          .then(() => {
+            return game
+              .update({
+                status: game.status + 1,
+                currentBet: 0
+              })
+          })
+          .then(() => {
+            return getTableStatus(tableId);
           });
       } else if (statusflag == "end") {
-        return game.update({ status: 0 }).then(newgame => {
-          checkGame(tableId);
+        console.log(`------ GAME END ------`);
+        return game.update({ status: 0 })
+        .then(newgame => {
+          return checkGame(tableId);
         });
         //decide winner
       }
@@ -123,7 +134,7 @@ const updateGameStatus = tableId => {
 };
 
 let checkGame = tableId => {
-  models.Table
+  return models.Table
     .find({
       where: {
         id: tableId
