@@ -28,7 +28,6 @@ const updateGameContext = gameContext => {
   let { statusflag, j } = gameContext;
   let currentflag = false;
   let noofusers = 0;
-
   while (j <= newgameusers.length) {
     if (currentflag) {
       if (newgameusers[j]["id"] == lastraised || newgameusers[j]["isCurrent"]) {
