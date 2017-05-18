@@ -21,16 +21,20 @@ generateRandom = num => {
 const {
   getGameUsers,
   getGameUserPlays,
-  getCurrentStatusFlag,
+  updateGameContext,
   resetIsCurrentForGame,
   setAsCurrentPlayer
 } = DBUtils;
 
 const updateGameStatus = tableId => {
-  let gameusers = [];
-  let newgameusers = [];
-  let j = 0;
-  let game;
+
+  const gameContext = {
+    newgameusers: [],
+    j: 0,
+    game: null,
+    statusflag: "none",
+    lastraised: -1
+  }
 
   return models.Game
     .find({
@@ -40,11 +44,10 @@ const updateGameStatus = tableId => {
       }
     })
     .then(result => {
-      game = result;
-      return getGameUsers(game.id);
+      gameContext.game = result;
+      return getGameUsers(gameContext.game.id);
     })
-    .then(results => {
-      gameusers = results;
+    .then(gameusers => {
       gameusers.sort((a, b) => {
         return a["TableUser.position"] - b["TableUser.position"];
       });
@@ -56,8 +59,10 @@ const updateGameStatus = tableId => {
         i++;
       }
       const split = (i + 1) % gameusers.length;
-      newgameusers = gameusers.slice(split).concat(gameusers.slice(0, split));
-      const oldstatus = game.status;
+      gameContext.newgameusers = gameusers.slice(split).concat(gameusers.slice(0, split));
+
+      const {newgameusers} = gameContext;
+      const oldstatus = gameContext.game.status;
       const userIds = [];
       for (i = 0; i < newgameusers.length; i++) {
         userIds.push(newgameusers[i]["id"]);
@@ -65,18 +70,20 @@ const updateGameStatus = tableId => {
       return getGameUserPlays(userIds);
     })
     .then(userPlays => {
-      let lastraised = -1;
       if (userPlays.length > 0) {
-        lastraised = userPlays[0].id;
+        gameContext.lastraised = userPlays[0].id;
       }
-      const statusflag = getCurrentStatusFlag(game, newgameusers, j, lastraised);
+
+      updateGameContext(gameContext);
+      
+      const {game, statusflag, j, newgameusers} = gameContext;
 
       if (statusflag == "current") {
         return resetIsCurrentForGame(game.id).then(() => {
           const currentPlayerId = newgameusers[j]["id"];
-          return setAsCurrentPlayer(currentPlayerId, game.id).then(dummy => {
-            getTableStatus(tableId);
-          });
+          return setAsCurrentPlayer(currentPlayerId, game.id);
+        }).then(() => {
+          return getTableStatus(tableId);
         });
       } else if (statusflag == "next") {
         return resetIsCurrentForGame(game.id)
@@ -102,20 +109,23 @@ const updateGameStatus = tableId => {
               q++;
             }
             const currentPlayerId = newgameusers[q]["id"];
-            return setAsCurrentPlayer(currentPlayerId, game.id).then(() => {
-              return game
-                .update({
-                  status: game.status + 1,
-                  currentBet: 0
-                })
-                .then(gdata => {
-                  getTableStatus(tableId);
-                });
-            });
+            return setAsCurrentPlayer(currentPlayerId, game.id)
+          })
+          .then(() => {
+            return game
+              .update({
+                status: game.status + 1,
+                currentBet: 0
+              })
+          })
+          .then(() => {
+            return getTableStatus(tableId);
           });
       } else if (statusflag == "end") {
-        return game.update({ status: 0 }).then(newgame => {
-          checkGame(tableId);
+        console.log(`------ GAME END ------`);
+        return game.update({ status: 0 })
+        .then(newgame => {
+          return checkGame(tableId);
         });
         //decide winner
       }
@@ -123,7 +133,7 @@ const updateGameStatus = tableId => {
 };
 
 let checkGame = tableId => {
-  models.Table
+  return models.Table
     .find({
       where: {
         id: tableId
@@ -202,6 +212,12 @@ let checkGame = tableId => {
                                 TableUserId: tableusers[i]["id"]
                               })
                               .then(gameuser => {
+                                muser=null;
+                                for(l=0;l<tableusers.length;l++){
+                                  if(gameuser.TableUserId==tableusers[l]['id']){
+                                    muser=tableusers[l];
+                                  }                                      
+                                }
                                 if (gameuser.isSmallBlind) {
                                   alist.push(
                                     models.UserPlay.create({
@@ -210,7 +226,24 @@ let checkGame = tableId => {
                                       GameUserId: gameuser.id
                                     })
                                   );
-                                  //reduce user chips
+                                  alist.push(
+                                      models.UserChip.findById(muser.UserId).then(uc=>{
+                                        alist.push(
+                                          uc.update({
+                                            value:uc.value-table.smallBlind
+                                          })
+                                        )
+                                      })
+                                    )
+                                    alist.push(
+                                      models.TableUser.update({
+                                        currentChips:muser.currentChips-table.smallBlind
+                                      },{
+                                        where:{
+                                          id:muser.id
+                                        }
+                                      })
+                                    )
                                 }
                                 if (gameuser.isBigBlind) {
                                   alist.push(
@@ -220,7 +253,24 @@ let checkGame = tableId => {
                                       GameUserId: gameuser.id
                                     })
                                   );
-                                  //reduce user chips
+                                  alist.push(
+                                      models.UserChip.findById(muser.UserId).then(uc=>{
+                                        alist.push(
+                                          uc.update({
+                                            value:uc.value-table.bigBlind
+                                          })
+                                        )
+                                      })
+                                    )
+                                    alist.push(
+                                      models.TableUser.update({
+                                        currentChips:muser.currentChips-table.bigBlind
+                                      },{
+                                        where:{
+                                          id:muser.id
+                                        }
+                                      })
+                                    )
                                 }
                                 counter++;
                                 alist.push(
@@ -317,6 +367,12 @@ let checkGame = tableId => {
                                   TableUserId: tableusers[i]["id"]
                                 })
                                 .then(gameuser => {
+                                  muser=null;
+                                  for(l=0;l<tableusers.length;l++){
+                                    if(gameuser.TableUserId==tableusers[l]['id']){
+                                      muser=tableusers[l];
+                                    }                                      
+                                  }
                                   if (gameuser.isSmallBlind) {
                                     alist.push(
                                       models.UserPlay.create({
@@ -325,7 +381,24 @@ let checkGame = tableId => {
                                         GameUserId: gameuser.id
                                       })
                                     );
-                                    //reduce user chips
+                                    alist.push(
+                                      models.UserChip.findById(muser.UserId).then(uc=>{
+                                        alist.push(
+                                          uc.update({
+                                            value:uc.value-table.smallBlind
+                                          })
+                                        )
+                                      })
+                                    )
+                                    alist.push(
+                                      models.TableUser.update({
+                                        currentChips:muser.currentChips-table.smallBlind
+                                      },{
+                                        where:{
+                                          id:muser.id
+                                        }
+                                      })
+                                    )
                                   }
                                   if (gameuser.isBigBlind) {
                                     alist.push(
@@ -335,7 +408,24 @@ let checkGame = tableId => {
                                         GameUserId: gameuser.id
                                       })
                                     );
-                                    //reduce user chips
+                                    alist.push(
+                                      models.UserChip.findById(muser.UserId).then(uc=>{
+                                        alist.push(
+                                          uc.update({
+                                            value:uc.value-table.bigBlind
+                                          })
+                                        )
+                                      })
+                                    )
+                                    alist.push(
+                                      models.TableUser.update({
+                                        currentChips:muser.currentChips-table.bigBlind
+                                      },{
+                                        where:{
+                                          id:muser.id
+                                        }
+                                      })
+                                    )
                                   }
                                   counter++;
                                   alist.push(
@@ -625,231 +715,323 @@ io.on("connection", socket => {
               .then(tableuser => {
                 socket._tableUserId = tableuser.id;
               });
-          } else {
-            socket._tableUserId = dat.id;
-          }
-          models.User.findById(socket._userId).then(data => {
-            models.TableUser
-              .findAll({
-                where: {
-                  status: { $ne: 2 }
-                },
-                include: [
-                  {
-                    model: models.User,
-                    attributes: ["id", "username", "name", "avatar"]
-                  }
-                ]
-              })
-              .then(tableusers => {
-                getTableStatus(socket._tableId);
-                io
-                  .to(socket._tableId)
-                  .emit("chat:status", {
-                    message: data.name + " has joined the lobby.",
-                    tableusers: tableusers
+              models.User.findById(socket._userId).then(data => {
+                models.TableUser
+                  .findAll({
+                    where: {
+                      status: { $ne: 2 }
+                    },
+                    include: [
+                      {
+                        model: models.User,
+                        attributes: ["id", "username", "name", "avatar"]
+                      }
+                    ]
+                  })
+                  .then(tableusers => {
+                    getTableStatus(socket._tableId);
+                    io
+                      .to(socket._tableId)
+                      .emit("chat:status", {
+                        message: data.name + " has joined the lobby.",
+                        tableusers: tableusers
+                      });
                   });
               });
-          });
+          } else {
+            socket._tableUserId = dat.id;
+            getTableStatus(socket._tableId);
+          }
         });
     }
   });
 
-  socket.on("sit", data => {
-    models.TableUser
-      .find({
-        where: { position: data.position, status: { $ne: 10 } }
-      })
-      .then(success => {
-        if (!success) {
-          models.TableUser
-            .find({
-              where: {
-                TableId: socket._tableId,
-                UserId: socket._userId
-              }
+  socket.on("sit",data=>{
+      models.TableUser.find({
+        where:{position:data.position,status:{$ne:10}}
+      }).then(success=>{
+        if(!success){
+          models.TableUser.find({
+            where:{
+              TableId:socket._tableId,
+              UserId:socket._userId,
+            }
+          }).then(tableuser=>{
+            tableuser.update({status:1,buyIn:data.BuyIn,currentChips:data.BuyIn,position:data.position}).then(tableuserupdate=>{
+              checkGame(socket._tableId);
             })
-            .then(tableuser => {
-              tableuser
-                .update({
-                  status: 1,
-                  buyIn: data.BuyIn,
-                  currentChips: data.BuyIn,
-                  position: data.position
-                })
-                .then(tableuserupdate => {
-                  checkGame(socket._tableId);
-                });
-            });
+          })
         }
-      });
-  });
-
-  socket.on("check", data => {
-    getTableGame(socket._tableId).then(game => {
-      models.GameUser
-        .find({
-          where: {
-            GameId: game.id,
-            TableUserId: socket._tableUserId
-          }
-        })
-        .then(user => {
-          user.update({ status: 2 });
-          models.UserPlay
-            .create({
-              playType: 1,
-              GameUserId: user.id,
-              gameStatus: game.status
-            })
-            .then(dat => {
-              updateGameStatus(socket._tableId);
-            });
-        });
-    });
-  });
-
-  socket.on("call", data => {
-    getTableGame(socket._tableId).then(game => {
-      models.GameUser
-        .find({
-          where: {
-            GameId: game.id,
-            TableUserId: socket._tableUserId
-          }
-        })
-        .then(user => {
-          user.update({ status: 3 });
-          models.UserPlay
-            .create({
-              playType: 2,
-              betAmount: data.bet,
-              GameUserId: user.id,
-              gameStatus: game.status
-            })
-            .then(dat => {
-              // models.UserChip.decrement({
-              //   value:data.bet
-              // },{
-              //   where:{
-              //     UserId:socket._userId
-              //   }
-              // }).then(userchip=>{
-              updateGameStatus(socket._tableId);
-              // })
-            });
-        });
-    });
-  });
-
-  socket.on("raise", data => {
-    getTableGame(socket._tableId).then(game => {
-      models.GameUser
-        .find({
-          where: {
-            GameId: game.id,
-            TableUserId: socket._tableUserId
-          }
-        })
-        .then(user => {
-          user.update({ status: 4 });
-          models.UserPlay
-            .create({
-              playType: 3,
-              betAmount: data.bet,
-              GameUserId: user.id,
-              gameStatus: game.status
-            })
-            .then(dat => {
-              models.UserChip
-                .decrement(
-                  {
-                    value: data.bet
-                  },
-                  {
-                    where: {
-                      UserId: socket._userId
-                    }
-                  }
-                )
-                .then(userchip => {
-                  if (data.bet > game.cuurentBet) {
-                    game
-                      .increment({
-                        currentBet: data.bet
-                      })
-                      .then(gmaedat => {
-                        updateGameStatus(socket._tableId);
-                      });
-                  } else {
-                    updateGameStatus(socket._tableId);
-                  }
-                });
-            });
-        });
-    });
-  });
-
-  socket.on("fold", data => {
-    getTableGame(socket._tableId).then(game => {
-      models.GameUser
-        .find({
-          where: {
-            GameId: game.id,
-            TableUserId: socket._tableUserId
-          }
-        })
-        .then(user => {
-          user.update({ status: 0 });
-          models.UserPlay
-            .create({
-              playType: 4,
-              GameUserId: user.id,
-              gameStatus: game.status
-            })
-            .then(dat => {
-              updateGameStatus(socket._tableId);
-            });
-        });
-    });
-  });
-
-  socket.on("stand", data => {
-    getTableGame(socket._tableId).then(game => {
-      models.GameUser
-        .find({
-          where: {
-            GameId: game.id,
-            TableUserId: socket._tableUserId
-          }
-        })
-        .then(user => {
-          user.update({ status: 0 });
-          models.UserPlay.create({
-            playType: 4,
-            GameUserId: user.id,
-            gameStatus: game.status
-          });
-        });
-      models.TableUser.findById(socket._tableUserId).then(tableuser => {
-        tableuser.update({ status: 0 }).then(response => {
-          getTableStatus(socket._tableId);
-        });
-      });
-    });
-  });
-
-  socket.on("message", data => {
-    models.Chat
-      .create({
-        message: data.message,
-        TableId: socket._tableId,
-        TableUserId: socket._tableUserId
       })
-      .then(dat => {
-        io.to(socket._tableId).emit("chat:message", { dat });
-      });
-  });
+    })
+
+    socket.on("check",data=>{
+      getTableGame(socket._tableId).then(game=>{
+        models.GameUser.find({
+          where:{
+            GameId:game.id,
+            TableUserId:socket._tableUserId
+          }
+        }).then(user=>{
+          user.update({status:2}).then(d=>{
+            models.UserPlay.create({
+              playType:1,
+              GameUserId:user.id,
+              gameStatus:game.status
+            }).then(dat=>{
+              updateGameStatus(socket._tableId);
+            })
+          })
+        })
+      })
+    })
+
+    socket.on("call",data=>{
+      getTableGame(socket._tableId).then(game=>{  
+        models.GameUser.find({
+          where:{
+            GameId:game.id,
+            TableUserId:socket._tableUserId
+          },
+          include:{
+            model:models.TableUser
+          }
+        }).then(user=>{
+          newchips=user.TableUser.currentChips-parseInt(data.bet);
+          user.update({status:3}).then(d=>{
+            models.TableUser.update({
+              currentChips:newchips
+            },{
+              where:{
+                id:user.TableUserId
+              }
+            }).then(trand=>{
+              models.UserPlay.create({
+                playType:2,
+                betAmount:data.bet,
+                GameUserId:user.id,
+                gameStatus:game.status
+              }).then(dat=>{
+                models.UserChip.findById(user.TableUser.UserId).then(us=>{
+                  us.update({
+                    value:us.value-parseInt(data.bet)
+                  }).then(nus=>{
+                    updateGameStatus(socket._tableId);
+                  })
+                })
+              })
+            })
+          })          
+        })
+      })
+    })
+
+    socket.on("raise",data=>{
+      getTableGame(socket._tableId).then(game=>{  
+        models.GameUser.find({
+          where:{
+            GameId:game.id,
+            TableUserId:socket._tableUserId
+          },
+          include:{
+            model:models.TableUser
+          }
+        }).then(user=>{
+          newchips=user.TableUser.currentChips-parseInt(data.bet);
+          user.update({status:4}).then(d=>{
+            models.TableUser.update({
+              currentChips:newchips
+            },{
+              where:{
+                id:user.TableUserId
+              }
+            }).then(trand=>{
+              models.UserPlay.create({
+                playType:3,
+                betAmount:data.bet,
+                GameUserId:user.id,
+                gameStatus:game.status
+              }).then(dat=>{
+                models.UserChip.findById(user.TableUser.UserId).then(us=>{
+                  us.update({
+                    value:us.value-parseInt(data.bet)
+                  }).then(nus=>{
+                    if(data.bet>game.currentBet){
+                      game.increment({
+                        currentBet:data.bet
+                      }).then(gmaedat=>{
+                        updateGameStatus(socket._tableId);
+                      })
+                    }
+                    else{
+                      updateGameStatus(socket._tableId);
+                    }
+                    // updateGameStatus(socket._tableId);
+                  })
+                })
+              })
+            })
+          })          
+        })
+      })
+      // getTableGame(socket._tableId).then(game=>{
+      //   models.GameUser.find({
+      //     where:{
+      //       GameId:game.id,
+      //       TableUserId:socket._tableUserId
+      //     }
+      //   }).then(user=>{
+      //     user.update({status:4});
+      //       models.UserPlay.create({
+      //         playType:3,
+      //         betAmount:data.bet,
+      //         GameUserId:user.id,
+      //         gameStatus:game.status
+      //       }).then(dat=>{
+      //         models.UserChip.decrement({
+      //           value:data.bet
+      //         },{
+      //           where:{
+      //             UserId:socket._userId
+      //           }
+      //         }).then(userchip=>{
+      //           if(data.bet>game.cuurentBet){
+      //             game.increment({
+      //               currentBet:data.bet
+      //             }).then(gmaedat=>{
+      //               updateGameStatus(socket._tableId);
+      //             })
+      //           }
+      //           else{
+      //             updateGameStatus(socket._tableId);
+      //           }
+      //         })
+      //       })
+      //   })
+      // })
+    })
+
+    socket.on("fold",data=>{
+      getTableGame(socket._tableId).then(game=>{
+        models.GameUser.find({
+          where:{
+            GameId:game.id,
+            TableUserId:socket._tableUserId
+          }
+        }).then(user=>{
+          user.update({status:0}).then(d=>{
+            models.UserPlay.create({
+              playType:4,
+              GameUserId:user.id,
+              gameStatus:game.status
+            }).then(dat=>{
+              updateGameStatus(socket._tableId)
+            })
+          })
+        })
+      })
+    })
+
+    socket.on("stand",data=>{
+      getTableGame(socket._tableId).then(game=>{
+        if(game){
+          models.GameUser.find({
+            where:{
+              GameId:game.id,
+              TableUserId:socket._tableUserId
+            }
+          }).then(user=>{
+            if(user){
+              user.update({status:0}).then(d=>{
+                models.UserPlay.create({
+                  playType:4,
+                  GameUserId:user.id,
+                  gameStatus:game.status
+                }).then(dat=>{
+                  models.TableUser.findById(socket._tableUserId).then(tableuser=>{
+                    tableuser.update({status:0}).then(response=>{
+                      updateGameStatus(socket._tableId)
+                      getTableStatus(socket._tableId)
+                    })
+                  })
+                })
+              })  
+            }
+            else{
+              models.TableUser.findById(socket._tableUserId).then(tableuser=>{
+                tableuser.update({status:0}).then(response=>{
+                  getTableStatus(socket._tableId)
+                })
+              })
+            }
+          })
+        }
+        else{
+          models.TableUser.findById(socket._tableUserId).then(tableuser=>{
+            tableuser.update({status:0}).then(response=>{
+              getTableStatus(socket._tableId)
+            })
+          })
+        }
+      })
+    })
+
+    socket.on("leave",data=>{
+      getTableGame(socket._tableId).then(game=>{
+        if(game){
+          models.GameUser.find({
+            where:{
+              GameId:game.id,
+              TableUserId:socket._tableUserId
+            }
+          }).then(user=>{
+            if(user){
+              user.update({status:0}).then(d=>{
+                models.UserPlay.create({
+                  playType:4,
+                  GameUserId:user.id,
+                  gameStatus:game.status
+                }).then(dat=>{
+                  models.TableUser.findById(socket._tableUserId).then(tableuser=>{
+                    tableuser.update({status:0}).then(response=>{
+                      updateGameStatus(socket._tableId);
+                      getTableStatus(socket._tableId);
+                      socket.disconnect();
+                    })
+                  })
+                })
+              })  
+            }
+            else{
+              models.TableUser.findById(socket._tableUserId).then(tableuser=>{
+                tableuser.update({status:0}).then(response=>{
+                  getTableStatus(socket._tableId);
+                  socket.disconnect();
+                })
+              })
+            }
+          })
+        }
+        else{
+          models.TableUser.findById(socket._tableUserId).then(tableuser=>{
+            tableuser.update({status:0}).then(response=>{
+              getTableStatus(socket._tableId);
+              socket.disconnect();
+            })
+          })
+        }
+      })
+    })
+
+    socket.on("message",data=>{
+      models.Chat.create({
+        message:data.message,
+        TableId:socket._tableId,
+        TableUserId:socket._tableUserId
+      }).then(dat=>{
+        io.to(socket._tableId).emit("chat:message",{dat})
+      })
+    })
 });
 
 module.exports = io;

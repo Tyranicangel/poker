@@ -13,6 +13,7 @@ import { ModalDirective } from 'ng2-bootstrap';
 })
 export class TableComponent implements OnInit {
   @ViewChild('modal') public buyInModal:ModalDirective;
+  @ViewChild('modal2') public raiseModal:ModalDirective;
   private tableId:string;
   private chatMessage: string;
   private chatMessages: any[] = [];
@@ -21,6 +22,7 @@ export class TableComponent implements OnInit {
   private tableUserId:number;
   private tableData:any;
   private userData:any;
+  private myRaise:number;
   private gameSettings: {
     position:number,
     BuyIn:number
@@ -31,6 +33,7 @@ export class TableComponent implements OnInit {
   }
 
   constructor(private activatedRoute:ActivatedRoute, private socket:SocketService, /*private chat:ChatService*/) {
+      this.myRaise=0;
       this.gameSettings={
         position:0,
         BuyIn:0
@@ -42,6 +45,52 @@ export class TableComponent implements OnInit {
         this.tableId=params['id'];
       })
       this.tableUserId=0;
+   }
+
+   getuserstatus(tableuser){
+     if(tableuser.gameuser){
+        if(tableuser.gameuser.status==1){
+          return "None"
+        }
+        else if(tableuser.gameuser.status==2){
+          return "Check"
+        }
+        else if(tableuser.gameuser.status==3){
+          return "Call"
+        }
+        else if(tableuser.gameuser.status==4){
+          return "Raise"
+        }
+        else if(tableuser.gameuser.status==0){
+          return "Fold"
+        }
+     }
+     else{
+       return "None";
+     }
+   }
+
+   getuserbet(tableuser){
+     if(tableuser.userplay){
+        if(tableuser.gameuser.status==1){
+          return tableuser.userplay.betAmount;
+        }
+        else if(tableuser.gameuser.status==2){
+          return "None"
+        }
+        else if(tableuser.gameuser.status==3){
+          return tableuser.userplay.betAmount;
+        }
+        else if(tableuser.gameuser.status==4){
+          return tableuser.userplay.betAmount;
+        }
+        else if(tableuser.gameuser.status==0){
+          return "None"
+        }
+     }
+     else{
+       return "None";
+     }
    }
 
    showsit(val){
@@ -75,8 +124,30 @@ export class TableComponent implements OnInit {
      this.socket.send("call",this.userAction);
    }
 
+   showRaise(){
+     this.raiseModal.show();
+   }
+
+   allin(){
+
+   }
+
    raise(){
-      this.socket.send("raise",this.userAction);
+      if(this.myRaise==0){
+        alert("Please raise something");
+      }
+      else if(this.myRaise>this.userData['TableUser.currentChips']){
+        alert("You do no have enough chips to raise");
+      }
+      else if(this.myRaise<this.userData.minBet){
+        alert("You have to do the minimum raise");
+      }
+      else{
+        this.userAction.bet=this.myRaise;
+        this.socket.send("raise",this.userAction);
+        this.myRaise=0;
+        this.raiseModal.hide();
+      }
    }
 
    fold(){
@@ -85,10 +156,12 @@ export class TableComponent implements OnInit {
    }
 
    stand(){
+    this.userAction.bet=0;
     this.socket.send("stand",this.userAction);
    }
 
    leave(){
+     this.userAction.bet=0;
      this.socket.send("leave",this.userAction);
    }
 
