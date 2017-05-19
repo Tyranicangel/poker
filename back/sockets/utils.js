@@ -1,4 +1,71 @@
 const models = require("../models");
+const ranking = require("./rankPoker");
+
+const {
+  holdEm,
+  distribute
+} = ranking;
+
+
+const concatcards=(str,item)=>{
+  return str+item['Card.spriteX']+item['Card.spriteY']+" ";
+}
+
+const decideWinner = gameId=>{
+  models.GameCard.findAll({
+    where:{
+      GameId:gameId
+    },
+    include:{
+      model:models.Card
+    },
+    raw:true
+  }).then(gamecards=>{
+    gamelist=gamecards.reduce(concatcards,"").slice(0,-1);
+    models.GameUser.findAll({
+      where:{
+        GameId:gameId
+      },
+      raw:true
+    }).then(gameusers=>{
+      alist=[];
+      for(i=0;i<gameusers.length;i++){
+        alist.push(models.UserCard.findAll({
+          where:{
+            GameUserId:gameusers[i]['id']
+          },
+          include:{
+            model:models.Card
+          },
+          raw:true
+        }));
+      }
+      Promise.all(alist).then(dat=>{
+        eval=[gamelist,[]];
+        for(i=0;i<dat.length;i++){
+          gameusers[i]['PlayerCards']=dat[i].reduce(concatcards,"").slice(0,-1);
+          eval[1].push(gameusers[i]['PlayerCards']);
+        }
+        evaluated=holdEm(eval[0],eval[1]);
+        plist=[];
+        for(i=0;i<gameusers.length;i++){
+          gameusers[i]['eval']=evaluated[i];
+          plist.push(models.UserPlay.sum("betAmount",{
+            where:{
+              GameUserId:gameusers[i]['id']
+            }
+          }));
+        }
+        Promise.all(plist).then(sums=>{
+          for(i=0;i<sums.length;i++){
+            gameusers[i]['totalbet']=sums[i];
+          }
+          distribute(gameusers);
+        })
+      });
+    });
+  });
+}
 
 const getGameUsers = gameId => {
   return models.GameUser.findAll({
@@ -101,5 +168,6 @@ module.exports = {
   getGameUserPlays,
   updateGameContext,
   resetIsCurrentForGame,
-  setAsCurrentPlayer
+  setAsCurrentPlayer,
+  decideWinner
 };

@@ -23,7 +23,8 @@ const {
   getGameUserPlays,
   updateGameContext,
   resetIsCurrentForGame,
-  setAsCurrentPlayer
+  setAsCurrentPlayer,
+  decideWinner
 } = DBUtils;
 
 const updateGameStatus = tableId => {
@@ -123,10 +124,11 @@ const updateGameStatus = tableId => {
           });
       } else if (statusflag == "end") {
         console.log(`------ GAME END ------`);
-        return game.update({ status: 0 })
-        .then(newgame => {
-          return checkGame(tableId);
-        });
+        decideWinner(game.id);
+        // return game.update({ status: 0 })
+        // .then(newgame => {
+        //   return checkGame(tableId);
+        // });
         //decide winner
       }
     });

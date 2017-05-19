@@ -7,10 +7,33 @@ const countOccurences = (list, value) => {
 };
 
 const RANKS_ = "23456789TJQKA";
-const ADJUSTED_SCORES = [1, [3, 1, 2], [3, 1, 3], [5]];
+const ADJUSTED_SCORES = [[0], [3, 1, 2], [3, 1, 3], [5]];
 const getCards = handString => {
   return handString.split(" ");
 };
+
+const concat=(str,item)=>{
+  return str+item;
+}
+
+const pad=(str,item)=>{
+  return str+("0000" + item).slice(-2);
+}
+
+const max=(possible)=>{
+  j=0;
+  for(i=0;i<possible.length;i++){
+    if(possible[i][0].reduce(concat,"")>possible[j][0].reduce(concat,"")){
+      j=i;
+    }
+    else if(possible[i][0].reduce(concat,"")==possible[j][0].reduce(concat,"")){
+      if(possible[i][1].reduce(pad,"")>possible[j][1].reduce(pad,"")){
+        j=i;
+      }
+    }
+  }
+  return possible[j];
+}
 
 const rankHand = handString => {
   const hand = getCards(handString);
@@ -36,56 +59,91 @@ const rankHand = handString => {
     return [occurences, k].map(Number);
   });
   const sortedTuples = _.sortBy(tuples, ["0", "1"]);
-  //   console.log(sortedTuples);
+  
   let [score, ranks] = [
     _.map(sortedTuples, "0").reverse(),
     _.map(sortedTuples, "1").reverse()
   ];
-  //   console.log(score, ranks);
+  
   if (score.length === 5) {
-    // console.log(`----- ADJUSTED ------`);
-    // if there are 5 different ranks it could be a straight or a flush (or both)
     ranksSplit = ranks.slice(0, 2);
     if (ranksSplit[0] === 12 && ranksSplit[1] === 3) {
-      ranks = [3, 2, 1, 0, -1]; // adjust if 5 high straight
+      ranks = [3, 2, 1, 0, -1];
     }
-
-    // # high card, straight, flush, straight flush
     const uniqueSuits = _.uniq(_.map(hand, "1"));
     const flush = uniqueSuits.length === 1 ? 1 : 0;
     const straight = ranks[0] - ranks[4] === 4 ? 1 : 0;
     const adjustmentIndex = parseInt(`${flush}${straight}`, 2);
     score = ADJUSTED_SCORES[adjustmentIndex];
   }
-  console.log(score, ranks);
-  console.log(`-----------------`);
   return [score, ranks];
 };
 
 const holdEm = (boardString, handsList) => {
-  scores = _.map(handsList, (hand, i) => {
+  return scores = _.map(handsList, (hand, i) => {
     const handString = `${boardString} ${hand}`;
-    return [rankHand(handString), i];
+    return rankHand(handString);
   });
-  best = Math.max(scores[0]);
-  console.log("--- BEST ---");
-  console.log(scores);
-  return best;
 };
 
-console.log(`RANKING`);
-rankHand("9H TC JC KS KC");
-rankHand("9H TC JC JS KC");
-rankHand("9H TC AD 8C 2C");
+const check=(list1,list2)=>{
+  console.log(list1);
+  console.log(list2);
+}
 
-// holdEm("9H TC JC QS KC", [
-//   "JS JD", // 0
-//   "AD 9C", // 1 A-straight
-//   "JD 2C", // 2
-//   "AC 8D", // 3 A-straight
-//   "QH KH", // 4
-//   "TS 9C", // 5
-//   "AH 3H", // 6 A-straight
-//   "3D 2C" // 7
-//   // '8C 2C', // 8 flush
-// ]);
+const distribute=(gameusers)=>{
+  pots={}
+  users={};
+  for(i=0;i<gameusers.length;i++){
+    if(!pots[gameusers[i]['totalbet']]){
+      pots[gameusers[i]['totalbet']]={'players':[],'winners':[]};
+    }
+    gameusers[i]['winnings']=0;
+    users[gameusers[i]['TableUserId']]=gameusers[i];
+  }
+  for(key in pots){
+    for(i=0;i<gameusers.length;i++){
+      if(parseInt(key)<=gameusers[i]['totalbet']){
+        pots[key]['players'].push(gameusers[i]['TableUserId']);
+      }
+    }
+  }
+  for(key in pots){
+    winners=[];
+    for(i=0;i<pots[key]['players'].length;i++){
+      if(users[pots[key]['players'][i]]['status']!=0){
+        if(winners.length==0){
+          winners.push(pots[key]['players'][i]);
+        }
+        else{
+          check(users[pots[key]['players'][i]]['eval'],users[winners[0]]['eval']);
+        }
+      }
+    }
+  }
+}
+
+qwe=[
+  {
+    id:128,
+    status:2,
+    TableUserId:123,
+    totalbet:10,
+    eval:[
+      [2,1,1,1],[1,10,9,6]
+    ]
+  },{
+    id:127,
+    status:2,
+    TableUserId:122,
+    totalbet:10,
+    eval:[
+      [2,1,1,1],[10,9,6,4]
+    ]
+  }
+]
+distribute(qwe);
+module.exports={
+  holdEm,
+  distribute
+}
